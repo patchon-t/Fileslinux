@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/global/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Files.App.Linux/Files.App.Linux.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Files.App.Linux.Tests/Files.App.Linux.Tests.csproj" />
+  </Folder>
+</Solution>

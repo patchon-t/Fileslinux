@@ -1,0 +1,480 @@
+<!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
+<UserControl
+	x:Class="Files.App.Linux.Views.ShellView"
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:c="using:Files.App.Linux.Controls"
+	xmlns:ic="using:FluentIcons.Avalonia"
+	xmlns:m="using:Files.App.Linux.Models"
+	xmlns:s="using:Files.App.Linux.Services"
+	xmlns:v="using:Files.App.Linux.Views"
+	xmlns:vm="using:Files.App.Linux.ViewModels"
+	x:DataType="vm:ShellTabViewModel">
+
+	<Grid RowDefinitions="Auto,*,Auto">
+
+		<!--  Command toolbar  -->
+		<Border
+			Height="48"
+			Background="{DynamicResource App.Theme.ToolbarBrush}"
+			BorderBrush="{DynamicResource App.Theme.DividerBrush}"
+			BorderThickness="0,0,0,1"
+			CornerRadius="8,0,0,0">
+			<Grid Margin="6,0" ColumnDefinitions="*,Auto">
+				<StackPanel
+					VerticalAlignment="Center"
+					Orientation="Horizontal"
+					Spacing="2">
+					<DropDownButton
+						Classes="subtle toolbar"
+						IsEnabled="{Binding CanCreateItems}"
+						IsVisible="{Binding IsFolder}"
+						ToolTip.Tip="{v:Loc BaseLayoutContextFlyoutNew.Label, New}">
+						<StackPanel Orientation="Horizontal" Spacing="8">
+							<ic:SymbolIcon FontSize="16" Symbol="AddCircle" />
+							<TextBlock VerticalAlignment="Center" Text="{v:Loc BaseLayoutContextFlyoutNew.Label, New}" />
+						</StackPanel>
+						<DropDownButton.Flyout>
+							<MenuFlyout Placement="BottomEdgeAlignedLeft">
+								<MenuItem Command="{Binding NewFolderCommand}" Header="{v:Loc Folder, Folder}" InputGesture="Ctrl+Shift+N">
+									<MenuItem.Icon>
+										<ic:SymbolIcon Foreground="#FFC83D" IconVariant="Filled" Symbol="Folder" />
+									</MenuItem.Icon>
+								</MenuItem>
+								<MenuItem Command="{Binding NewFileCommand}" Header="{v:Loc File, File}">
+									<MenuItem.Icon>
+										<ic:SymbolIcon Symbol="DocumentAdd" />
+									</MenuItem.Icon>
+								</MenuItem>
+							</MenuFlyout>
+						</DropDownButton.Flyout>
+					</DropDownButton>
+
+					<Rectangle
+						Width="1"
+						Height="20"
+						Margin="4,0"
+						Fill="{DynamicResource App.Theme.DividerBrush}"
+						IsVisible="{Binding IsFolder}" />
+
+					<Button
+						Classes="subtle toolbar"
+						Command="{Binding CutCommand}"
+						IsVisible="{Binding !IsTrash}"
+						IsEnabled="{Binding HasSelection}"
+						ToolTip.Tip="{v:Loc Cut, Cut}">
+						<ic:SymbolIcon FontSize="16" Symbol="Cut" />
+					</Button>
+					<Button
+						Classes="subtle toolbar"
+						Command="{Binding CopyCommand}"
+						IsVisible="{Binding !IsTrash}"
+						IsEnabled="{Binding HasSelection}"
+						ToolTip.Tip="{v:Loc Copy, Copy}">
+						<ic:SymbolIcon FontSize="16" Symbol="Copy" />
+					</Button>
+					<Button
+						Classes="subtle toolbar"
+						Command="{Binding PasteCommand}"
+						IsVisible="{Binding !IsTrash}"
+						IsEnabled="{Binding CanCreateItems}"
+						ToolTip.Tip="{v:Loc Paste, Paste}">
+						<ic:SymbolIcon FontSize="16" Symbol="ClipboardPaste" />
+					</Button>
+					<Button
+						Classes="subtle toolbar"
+						Command="{Binding RenameCommand}"
+						IsVisible="{Binding !IsTrash}"
+						IsEnabled="{Binding IsSingleSelection}"
+						ToolTip.Tip="{v:Loc Rename, Rename}">
+						<ic:SymbolIcon FontSize="16" Symbol="Rename" />
+					</Button>
+					<Button
+						Classes="subtle toolbar"
+						Command="{Binding DeleteCommand}"
+						IsEnabled="{Binding HasSelection}"
+						ToolTip.Tip="{v:Loc Delete, Delete}">
+						<ic:SymbolIcon FontSize="16" Symbol="Delete" />
+					</Button>
+
+					<!--  Contextual commands  -->
+					<Rectangle
+						Width="1"
+						Height="20"
+						Margin="4,0"
+						Fill="{DynamicResource App.Theme.DividerBrush}"
+						IsVisible="{Binding SelectionIsArchive}" />
+					<Button
+						Classes="subtle toolbar"
+						Command="{Binding ExtractCommand}"
+						IsVisible="{Binding SelectionIsArchive}">
+						<StackPanel Orientation="Horizontal" Spacing="8">
+							<ic:SymbolIcon FontSize="16" Symbol="FolderZip" />
+							<TextBlock VerticalAlignment="Center" Text="{v:Loc ExtractHere, Extract here}" />
+						</StackPanel>
+					</Button>
+					<Rectangle
+						Width="1"
+						Height="20"
+						Margin="4,0"
+						Fill="{DynamicResource App.Theme.DividerBrush}"
+						IsVisible="{Binding IsTrash}" />
+					<Button
+						Classes="subtle toolbar"
+						Command="{Binding RestoreCommand}"
+						IsEnabled="{Binding HasSelection}"
+						IsVisible="{Binding IsTrash}">
+						<StackPanel Orientation="Horizontal" Spacing="8">
+							<ic:SymbolIcon FontSize="16" Symbol="ArrowUndo" />
+							<TextBlock VerticalAlignment="Center" Text="{v:Loc Restore, Restore}" />
+						</StackPanel>
+					</Button>
+					<Button
+						Classes="subtle toolbar"
+						Command="{Binding RestoreAllCommand}"
+						IsVisible="{Binding IsTrash}">
+						<StackPanel Orientation="Horizontal" Spacing="8">
+							<ic:SymbolIcon FontSize="16" Symbol="ArrowUndo" />
+							<TextBlock VerticalAlignment="Center" Text="{v:Loc RestoreAllItems, Restore all items}" />
+						</StackPanel>
+					</Button>
+					<Button
+						Classes="subtle toolbar"
+						Command="{Binding EmptyTrashCommand}"
+						IsVisible="{Binding IsTrash}">
+						<StackPanel Orientation="Horizontal" Spacing="8">
+							<ic:SymbolIcon FontSize="16" Symbol="DeleteDismiss" />
+							<TextBlock VerticalAlignment="Center" Text="{v:Loc EmptyTrash, Empty trash}" />
+						</StackPanel>
+					</Button>
+				</StackPanel>
+
+				<StackPanel
+					Grid.Column="1"
+					VerticalAlignment="Center"
+					Orientation="Horizontal"
+					Spacing="2">
+					<DropDownButton
+						x:Name="SortButton"
+						Classes="subtle toolbar"
+						IsVisible="{Binding !IsHome}">
+						<StackPanel Orientation="Horizontal" Spacing="8">
+							<ic:SymbolIcon FontSize="16" Symbol="ArrowSort" />
+							<TextBlock VerticalAlignment="Center" Text="{v:Loc Sort, Sort}" />
+						</StackPanel>
+						<DropDownButton.Flyout>
+							<MenuFlyout Placement="BottomEdgeAlignedRight" />
+						</DropDownButton.Flyout>
+					</DropDownButton>
+					<DropDownButton
+						x:Name="LayoutButton"
+						Classes="subtle toolbar"
+						IsVisible="{Binding !IsHome}">
+						<StackPanel Orientation="Horizontal" Spacing="8">
+							<ic:SymbolIcon FontSize="16" Symbol="Grid" />
+							<TextBlock VerticalAlignment="Center" Text="{v:Loc Layout, Layout}" />
+						</StackPanel>
+						<DropDownButton.Flyout>
+							<MenuFlyout Placement="BottomEdgeAlignedRight" />
+						</DropDownButton.Flyout>
+					</DropDownButton>
+					<ToggleButton
+						Classes="subtle toolbar"
+						IsChecked="{Binding Main.IsInfoPaneOpen}"
+						ToolTip.Tip="{v:Loc ToggleDetailsPane, Toggle the details pane}">
+						<StackPanel Orientation="Horizontal" Spacing="8">
+							<ic:SymbolIcon FontSize="16" Symbol="PanelRight" />
+							<TextBlock VerticalAlignment="Center" Text="{v:Loc Details, Details}" />
+						</StackPanel>
+					</ToggleButton>
+					<DropDownButton
+						x:Name="MoreButton"
+						Classes="subtle toolbar"
+						ToolTip.Tip="{v:Loc SeeMore, See more}">
+						<ic:SymbolIcon FontSize="16" Symbol="MoreHorizontal" />
+						<DropDownButton.Flyout>
+							<MenuFlyout Placement="BottomEdgeAlignedRight" />
+						</DropDownButton.Flyout>
+					</DropDownButton>
+				</StackPanel>
+			</Grid>
+		</Border>
+
+		<!--  Content + details pane  -->
+		<Grid
+			x:Name="BodyGrid"
+			Grid.Row="1"
+			ColumnDefinitions="*,Auto,Auto">
+			<Panel x:Name="LayoutHost" Background="Transparent">
+
+				<!--  Home  -->
+				<v:HomeView DataContext="{Binding}" IsVisible="{Binding IsHome}" />
+
+				<!--  Details layout  -->
+				<Grid x:Name="DetailsHost" RowDefinitions="Auto,*">
+					<Grid.IsVisible>
+						<MultiBinding Converter="{x:Static BoolConverters.And}">
+							<Binding Path="!IsHome" />
+							<Binding Path="IsDetailsLayout" />
+						</MultiBinding>
+					</Grid.IsVisible>
+					<ScrollViewer
+						x:Name="HeaderScroller"
+						Margin="4,4,4,0"
+						HorizontalScrollBarVisibility="Hidden"
+						VerticalScrollBarVisibility="Disabled">
+						<c:DetailsRowPanel x:Name="DetailsHeader" Margin="4,0" />
+					</ScrollViewer>
+					<ListBox
+						x:Name="DetailsList"
+						Grid.Row="1"
+						Padding="0,2,0,8"
+						Classes="subtle files"
+						ItemsSource="{Binding Items}"
+						ScrollViewer.HorizontalScrollBarVisibility="Auto"
+						SelectionMode="Multiple">
+						<ListBox.ItemTemplate>
+							<DataTemplate x:DataType="m:FileItem">
+								<c:DetailsRowPanel Height="32" Background="Transparent">
+									<StackPanel
+										Margin="10,0,8,0"
+										VerticalAlignment="Center"
+										ClipToBounds="True"
+										Orientation="Horizontal"
+										Spacing="12">
+										<c:ItemIcon IconSize="20" Item="{Binding}" />
+										<TextBlock
+											VerticalAlignment="Center"
+											FontSize="13"
+											Text="{Binding DisplayName}"
+											TextTrimming="CharacterEllipsis" />
+									</StackPanel>
+									<TextBlock
+										Margin="8,0"
+										VerticalAlignment="Center"
+										Classes="secondary"
+										FontSize="12"
+										Text="{Binding LocationText}"
+										TextTrimming="CharacterEllipsis" />
+									<TextBlock
+										Margin="8,0"
+										VerticalAlignment="Center"
+										Classes="secondary"
+										FontSize="12"
+										Text="{Binding DateColumnText}"
+										TextTrimming="CharacterEllipsis" />
+									<TextBlock
+										Margin="8,0"
+										VerticalAlignment="Center"
+										Classes="secondary"
+										FontSize="12"
+										Text="{Binding TypeDescription}"
+										TextTrimming="CharacterEllipsis" />
+									<TextBlock
+										Margin="8,0,12,0"
+										HorizontalAlignment="Right"
+										VerticalAlignment="Center"
+										Classes="secondary"
+										FontSize="12"
+										Text="{Binding SizeText}"
+										TextTrimming="CharacterEllipsis" />
+								</c:DetailsRowPanel>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</Grid>
+
+				<!--  List layout  -->
+				<ListBox
+					x:Name="ListList"
+					Padding="4"
+					Classes="subtle files"
+					ItemsSource="{Binding Items}"
+					ScrollViewer.HorizontalScrollBarVisibility="Auto"
+					ScrollViewer.VerticalScrollBarVisibility="Disabled"
+					SelectionMode="Multiple">
+					<ListBox.IsVisible>
+						<MultiBinding Converter="{x:Static BoolConverters.And}">
+							<Binding Path="!IsHome" />
+							<Binding Path="IsListLayout" />
+						</MultiBinding>
+					</ListBox.IsVisible>
+					<ListBox.ItemsPanel>
+						<ItemsPanelTemplate>
+							<WrapPanel Orientation="Vertical" />
+						</ItemsPanelTemplate>
+					</ListBox.ItemsPanel>
+					<ListBox.ItemTemplate>
+						<DataTemplate x:DataType="m:FileItem">
+							<StackPanel
+								Width="260"
+								Height="30"
+								Margin="8,0"
+								Background="Transparent"
+								Orientation="Horizontal"
+								Spacing="10">
+								<c:ItemIcon IconSize="20" Item="{Binding}" />
+								<TextBlock
+									MaxWidth="220"
+									VerticalAlignment="Center"
+									FontSize="13"
+									Text="{Binding DisplayName}"
+									TextTrimming="CharacterEllipsis" />
+							</StackPanel>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+
+				<!--  Grid layout  -->
+				<ListBox
+					x:Name="GridList"
+					Padding="8"
+					Classes="subtle grid"
+					ItemsSource="{Binding Items}"
+					ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+					SelectionMode="Multiple">
+					<ListBox.IsVisible>
+						<MultiBinding Converter="{x:Static BoolConverters.And}">
+							<Binding Path="!IsHome" />
+							<Binding Path="IsGridLayout" />
+						</MultiBinding>
+					</ListBox.IsVisible>
+					<ListBox.ItemsPanel>
+						<ItemsPanelTemplate>
+							<WrapPanel Orientation="Horizontal" />
+						</ItemsPanelTemplate>
+					</ListBox.ItemsPanel>
+					<ListBox.ItemTemplate>
+						<DataTemplate x:DataType="m:FileItem">
+							<Grid
+								Width="{Binding $parent[v:ShellView].((vm:ShellTabViewModel)DataContext).GridItemWidth, FallbackValue=128}"
+								Height="{Binding $parent[v:ShellView].((vm:ShellTabViewModel)DataContext).GridItemHeight, FallbackValue=132}"
+								Background="Transparent"
+								RowDefinitions="*,Auto">
+								<c:ItemIcon
+									Margin="0,8,0,4"
+									VerticalAlignment="Bottom"
+									IconSize="{Binding $parent[v:ShellView].((vm:ShellTabViewModel)DataContext).GridIconSize, FallbackValue=80}"
+									Item="{Binding}" />
+								<TextBlock
+									Grid.Row="1"
+									MaxHeight="36"
+									Margin="6,0,6,6"
+									HorizontalAlignment="Center"
+									FontSize="12"
+									Text="{Binding DisplayName}"
+									TextAlignment="Center"
+									TextTrimming="CharacterEllipsis"
+									TextWrapping="Wrap" />
+							</Grid>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+
+				<!--  Empty folder / errors  -->
+				<StackPanel
+					Margin="0,64,0,0"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Top"
+					IsHitTestVisible="False"
+					IsVisible="{Binding IsEmpty}"
+					Spacing="8">
+					<TextBlock
+						HorizontalAlignment="Center"
+						Classes="secondary"
+						Text="{v:Loc EmptyFolder.Text, This folder is empty.}" />
+				</StackPanel>
+				<StackPanel
+					Margin="24,64,24,0"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Top"
+					IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+					Spacing="12">
+					<ic:SymbolIcon
+						HorizontalAlignment="Center"
+						FontSize="40"
+						Foreground="{DynamicResource App.Theme.SecondaryTextBrush}"
+						Symbol="LockClosed" />
+					<TextBlock
+						HorizontalAlignment="Center"
+						Classes="secondary"
+						Text="{Binding ErrorMessage}"
+						TextAlignment="Center"
+						TextWrapping="Wrap" />
+				</StackPanel>
+
+				<ProgressBar
+					Height="2"
+					MinHeight="0"
+					VerticalAlignment="Top"
+					IsIndeterminate="True"
+					IsVisible="{Binding IsLoading}" />
+			</Panel>
+
+			<GridSplitter
+				x:Name="InfoSplitter"
+				Grid.Column="1"
+				Width="4"
+				Classes="thin"
+				IsVisible="{Binding Main.IsInfoPaneOpen}"
+				ResizeDirection="Columns" />
+			<v:InfoPaneView
+				x:Name="InfoPane"
+				Grid.Column="2"
+				Width="300"
+				DataContext="{Binding Preview}"
+				IsVisible="{Binding $parent[v:ShellView].((vm:ShellTabViewModel)DataContext).Main.IsInfoPaneOpen, FallbackValue=False}" />
+		</Grid>
+
+		<!--  Status bar  -->
+		<Border
+			Grid.Row="2"
+			Height="32"
+			BorderBrush="{DynamicResource App.Theme.DividerBrush}"
+			BorderThickness="0,1,0,0">
+			<Grid Margin="12,0,6,0" ColumnDefinitions="Auto,Auto,*,Auto">
+				<TextBlock
+					VerticalAlignment="Center"
+					FontSize="12"
+					Text="{Binding StatusText}" />
+				<TextBlock
+					Grid.Column="1"
+					Margin="16,0,0,0"
+					VerticalAlignment="Center"
+					Classes="secondary"
+					FontSize="12"
+					Text="{Binding SelectionText}" />
+				<StackPanel
+					Grid.Column="3"
+					IsVisible="{Binding !IsHome}"
+					Orientation="Horizontal"
+					Spacing="2">
+					<ToggleButton
+						Width="28"
+						Height="24"
+						Padding="0"
+						HorizontalContentAlignment="Center"
+						Classes="subtle"
+						Command="{Binding SetLayoutCommand}"
+						CommandParameter="{x:Static s:LayoutMode.Details}"
+						IsChecked="{Binding IsDetailsLayout, Mode=OneWay}"
+						ToolTip.Tip="{v:Loc Details, Details}">
+						<ic:SymbolIcon FontSize="14" Symbol="TextBulletList" />
+					</ToggleButton>
+					<ToggleButton
+						Width="28"
+						Height="24"
+						Padding="0"
+						HorizontalContentAlignment="Center"
+						Classes="subtle"
+						Command="{Binding SetLayoutCommand}"
+						CommandParameter="{x:Static s:LayoutMode.GridMedium}"
+						IsChecked="{Binding IsGridLayout, Mode=OneWay}"
+						ToolTip.Tip="{v:Loc Grid, Grid}">
+						<ic:SymbolIcon FontSize="14" Symbol="Grid" />
+					</ToggleButton>
+				</StackPanel>
+			</Grid>
+		</Border>
+	</Grid>
+</UserControl>

@@ -1,0 +1,396 @@
+<!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
+<Window
+	x:Class="Files.App.Linux.Views.MainWindow"
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:ic="using:FluentIcons.Avalonia"
+	xmlns:m="using:Files.App.Linux.Models"
+	xmlns:v="using:Files.App.Linux.Views"
+	xmlns:vm="using:Files.App.Linux.ViewModels"
+	Title="{Binding WindowTitle}"
+	Width="1200"
+	Height="760"
+	MinWidth="520"
+	MinHeight="360"
+	x:DataType="vm:MainWindowViewModel"
+	Background="{DynamicResource App.Theme.WindowBrush}"
+	Icon="/Assets/files.png">
+
+	<Panel>
+		<Grid RowDefinitions="Auto,Auto,*">
+
+			<!--  Tab bar  -->
+			<Grid
+				x:Name="TabBar"
+				Height="40"
+				Background="{DynamicResource App.Theme.WindowBrush}"
+				ColumnDefinitions="Auto,Auto,*">
+				<ScrollViewer
+					x:Name="TabScroller"
+					HorizontalScrollBarVisibility="Hidden"
+					VerticalScrollBarVisibility="Disabled">
+					<ListBox
+						x:Name="TabList"
+						Margin="8,0,0,0"
+						VerticalAlignment="Bottom"
+						Classes="subtle tabs"
+						ItemsSource="{Binding Tabs}"
+						SelectedItem="{Binding SelectedTab}"
+						SelectionMode="Single,AlwaysSelected">
+						<ListBox.ItemsPanel>
+							<ItemsPanelTemplate>
+								<StackPanel Orientation="Horizontal" />
+							</ItemsPanelTemplate>
+						</ListBox.ItemsPanel>
+						<ListBox.ItemTemplate>
+							<DataTemplate x:DataType="vm:ShellTabViewModel">
+								<Grid
+									Width="200"
+									Height="34"
+									Background="Transparent"
+									ColumnDefinitions="Auto,*,Auto"
+									ToolTip.Tip="{Binding CurrentPath}">
+									<Grid.ContextMenu>
+										<ContextMenu>
+											<MenuItem Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).NewTabCommand}" Header="{v:Loc NewTab, New tab}" InputGesture="Ctrl+T" />
+											<MenuItem Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).DuplicateTabCommand}" CommandParameter="{Binding}" Header="{v:Loc DuplicateTab, Duplicate tab}" />
+											<Separator />
+											<MenuItem Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).CloseTabsToTheRightCommand}" CommandParameter="{Binding}" Header="{v:Loc CloseTabsToTheRight, Close tabs to the right}" />
+											<MenuItem Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).CloseOtherTabsCommand}" CommandParameter="{Binding}" Header="{v:Loc CloseOtherTabs, Close other tabs}" />
+											<MenuItem Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).CloseTabCommand}" CommandParameter="{Binding}" Header="{v:Loc CloseTab, Close tab}" InputGesture="Ctrl+W" />
+											<Separator />
+											<MenuItem Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ReopenClosedTabCommand}" Header="{v:Loc ReopenClosedTab, Reopen closed tab}" InputGesture="Ctrl+Shift+T" />
+										</ContextMenu>
+									</Grid.ContextMenu>
+									<ic:SymbolIcon
+										Margin="12,0,8,0"
+										FontSize="16"
+										Foreground="{DynamicResource App.Theme.IconBaseBrush}"
+										Symbol="{Binding TitleIcon}" />
+									<TextBlock
+										Grid.Column="1"
+										VerticalAlignment="Center"
+										FontSize="12"
+										Text="{Binding Title}"
+										TextTrimming="CharacterEllipsis" />
+									<Button
+										Grid.Column="2"
+										Width="28"
+										Height="24"
+										Margin="2,0,6,0"
+										Padding="0"
+										HorizontalContentAlignment="Center"
+										Classes="subtle tabclose"
+										Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).CloseTabCommand}"
+										CommandParameter="{Binding}"
+										ToolTip.Tip="{v:Loc CloseTab, Close tab}">
+										<ic:SymbolIcon FontSize="12" Symbol="Dismiss" />
+									</Button>
+								</Grid>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</ScrollViewer>
+				<Button
+					Grid.Column="1"
+					Width="36"
+					Height="30"
+					Margin="4,4,0,0"
+					Padding="0"
+					HorizontalContentAlignment="Center"
+					Classes="subtle"
+					Command="{Binding NewTabCommand}"
+					ToolTip.Tip="{v:Loc NewTab, New tab}">
+					<ic:SymbolIcon FontSize="16" Symbol="Add" />
+				</Button>
+			</Grid>
+
+			<!--  Address bar (navigation toolbar)  -->
+			<Grid
+				Grid.Row="1"
+				Height="48"
+				Background="{DynamicResource App.Theme.ChromeBrush}"
+				ColumnDefinitions="Auto,*,Auto,Auto">
+				<StackPanel
+					Margin="4,0,0,0"
+					Orientation="Horizontal"
+					Spacing="2">
+					<Button
+						Classes="subtle nav"
+						Command="{Binding ToggleSidebarCommand}"
+						ToolTip.Tip="{v:Loc ToggleSidebar, Toggle the sidebar}">
+						<ic:SymbolIcon FontSize="16" Symbol="PanelLeft" />
+					</Button>
+					<Button
+						x:Name="BackButton"
+						Classes="subtle nav"
+						Command="{Binding SelectedTab.GoBackCommand, FallbackValue={x:Null}}"
+						ToolTip.Tip="{v:Loc Back, Back}">
+						<ic:SymbolIcon FontSize="16" Symbol="ArrowLeft" />
+					</Button>
+					<Button
+						x:Name="ForwardButton"
+						Classes="subtle nav"
+						Command="{Binding SelectedTab.GoForwardCommand, FallbackValue={x:Null}}"
+						ToolTip.Tip="{v:Loc Forward, Forward}">
+						<ic:SymbolIcon FontSize="16" Symbol="ArrowRight" />
+					</Button>
+					<Button
+						Classes="subtle nav"
+						Command="{Binding SelectedTab.GoUpCommand, FallbackValue={x:Null}}"
+						IsEnabled="{Binding SelectedTab.CanGoUp, FallbackValue=False}"
+						ToolTip.Tip="{v:Loc Up, Up}">
+						<ic:SymbolIcon FontSize="16" Symbol="ArrowUp" />
+					</Button>
+					<Button
+						Classes="subtle nav"
+						Command="{Binding SelectedTab.RefreshCommand, FallbackValue={x:Null}}"
+						ToolTip.Tip="{v:Loc Refresh, Refresh}">
+						<ic:SymbolIcon FontSize="16" Symbol="ArrowClockwise" />
+					</Button>
+				</StackPanel>
+
+				<!--  Omnibar: breadcrumbs, or a text box when editing the path  -->
+				<Border
+					x:Name="Omnibar"
+					Grid.Column="1"
+					Height="34"
+					Margin="6,0"
+					Background="{DynamicResource App.Theme.OmnibarBrush}"
+					BorderBrush="{DynamicResource App.Theme.OmnibarBorderBrush}"
+					BorderThickness="1"
+					CornerRadius="6">
+					<Panel>
+						<Grid
+							x:Name="BreadcrumbHost"
+							Background="Transparent"
+							ColumnDefinitions="Auto,*">
+							<ic:SymbolIcon
+								Margin="10,0,4,0"
+								FontSize="16"
+								Foreground="{DynamicResource App.Theme.IconBaseBrush}"
+								Symbol="{Binding SelectedTab.TitleIcon, FallbackValue=Home}" />
+							<ScrollViewer
+								x:Name="BreadcrumbScroller"
+								Grid.Column="1"
+								HorizontalScrollBarVisibility="Hidden"
+								VerticalScrollBarVisibility="Disabled">
+								<ItemsControl x:Name="Breadcrumbs" ItemsSource="{Binding SelectedTab.Breadcrumbs, FallbackValue={x:Null}}">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<StackPanel Orientation="Horizontal" />
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
+									<ItemsControl.ItemTemplate>
+										<DataTemplate x:DataType="vm:BreadcrumbItem">
+											<StackPanel Orientation="Horizontal">
+												<Button
+													Height="28"
+													Padding="6,0"
+													Classes="subtle"
+													Click="OnBreadcrumbClick"
+													Content="{Binding Name}"
+													FontSize="13" />
+												<Button
+													Width="20"
+													Height="28"
+													Padding="0"
+													HorizontalContentAlignment="Center"
+													Classes="subtle"
+													Click="OnBreadcrumbChevronClick"
+													IsVisible="{Binding !IsLast}">
+													<ic:SymbolIcon FontSize="10" Symbol="ChevronRight" />
+												</Button>
+											</StackPanel>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</ScrollViewer>
+						</Grid>
+						<TextBox
+							x:Name="PathBox"
+							Padding="10,6"
+							VerticalContentAlignment="Center"
+							Background="Transparent"
+							BorderThickness="0"
+							IsVisible="False"
+							Watermark="{v:Loc OmnibarPathModeTextPlaceholder, Enter a path to navigate to...}" />
+					</Panel>
+				</Border>
+
+				<!--  Search  -->
+				<TextBox
+					x:Name="SearchBox"
+					Grid.Column="2"
+					Width="260"
+					Height="34"
+					Margin="0,0,6,0"
+					Padding="10,7,10,6"
+					VerticalContentAlignment="Center"
+					CornerRadius="6"
+					Watermark="{v:Loc Search, Search}">
+					<TextBox.InnerRightContent>
+						<ic:SymbolIcon
+							Margin="0,0,10,0"
+							FontSize="14"
+							Foreground="{DynamicResource App.Theme.SecondaryTextBrush}"
+							Symbol="Search" />
+					</TextBox.InnerRightContent>
+				</TextBox>
+
+				<StackPanel
+					Grid.Column="3"
+					Margin="0,0,6,0"
+					Orientation="Horizontal"
+					Spacing="2">
+					<!--  Status center (ongoing file operations)  -->
+					<Button
+						Classes="subtle nav"
+						IsVisible="{Binding Operations.HasItems}"
+						ToolTip.Tip="{v:Loc StatusCenter, Status center}">
+						<Panel>
+							<ic:SymbolIcon FontSize="16" Symbol="ArrowSync" />
+							<ProgressBar
+								Width="22"
+								Height="3"
+								MinWidth="0"
+								Margin="0,0,0,-22"
+								IsVisible="{Binding Operations.IsBusy}"
+								Maximum="100"
+								Value="{Binding Operations.OverallPercent}" />
+						</Panel>
+						<Button.Flyout>
+							<Flyout Placement="BottomEdgeAlignedRight">
+								<v:StatusCenterView DataContext="{Binding Operations}" />
+							</Flyout>
+						</Button.Flyout>
+					</Button>
+					<Button
+						Classes="subtle nav"
+						Command="{Binding OpenSettingsCommand}"
+						ToolTip.Tip="{v:Loc Settings, Settings}">
+						<ic:SymbolIcon FontSize="16" Symbol="Settings" />
+					</Button>
+				</StackPanel>
+			</Grid>
+
+			<!--  Sidebar + content  -->
+			<Grid
+				x:Name="ContentGrid"
+				Grid.Row="2"
+				Background="{DynamicResource App.Theme.ChromeBrush}"
+				ColumnDefinitions="240,Auto,*">
+				<ListBox
+					x:Name="SidebarList"
+					Padding="4,0,4,8"
+					Classes="subtle sidebar"
+					IsVisible="{Binding IsSidebarOpen}"
+					ItemsSource="{Binding Sidebar.Items}"
+					SelectedItem="{Binding Sidebar.SelectedItem, Mode=OneWay}"
+					SelectionMode="Single">
+					<ListBox.Styles>
+						<Style x:DataType="m:SidebarItem" Selector="ListBox.sidebar ListBoxItem">
+							<Setter Property="IsVisible" Value="{Binding IsVisible}" />
+							<Setter Property="Margin" Value="0,1" />
+						</Style>
+					</ListBox.Styles>
+					<ListBox.ItemTemplate>
+						<DataTemplate x:DataType="m:SidebarItem">
+							<Panel Background="Transparent" ToolTip.Tip="{Binding ToolTip}">
+								<!--  Section header  -->
+								<Grid
+									Height="34"
+									Margin="8,6,4,0"
+									ColumnDefinitions="*,Auto"
+									IsVisible="{Binding IsHeader}">
+									<TextBlock
+										VerticalAlignment="Center"
+										Classes="secondary"
+										FontSize="12"
+										FontWeight="SemiBold"
+										Text="{Binding Text}" />
+									<ic:SymbolIcon
+										Grid.Column="1"
+										Margin="0,0,6,0"
+										FontSize="10"
+										Foreground="{DynamicResource App.Theme.SecondaryTextBrush}"
+										IsVisible="{Binding IsExpanded}"
+										Symbol="ChevronDown" />
+									<ic:SymbolIcon
+										Grid.Column="1"
+										Margin="0,0,6,0"
+										FontSize="10"
+										Foreground="{DynamicResource App.Theme.SecondaryTextBrush}"
+										IsVisible="{Binding !IsExpanded}"
+										Symbol="ChevronRight" />
+								</Grid>
+								<!--  Item  -->
+								<Grid
+									Height="32"
+									ColumnDefinitions="Auto,Auto,*"
+									IsVisible="{Binding IsNavigable}">
+									<Border
+										Width="3"
+										Height="16"
+										Margin="0,0,0,0"
+										Background="{DynamicResource App.Theme.AccentBrush}"
+										Classes="pill"
+										CornerRadius="2" />
+									<ic:SymbolIcon
+										Grid.Column="1"
+										Margin="9,0,12,0"
+										FontSize="16"
+										Foreground="{Binding IconBrush}"
+										IconVariant="Filled"
+										Symbol="{Binding Icon}" />
+									<TextBlock
+										Grid.Column="2"
+										VerticalAlignment="Center"
+										FontSize="13"
+										Text="{Binding Text}"
+										TextTrimming="CharacterEllipsis" />
+								</Grid>
+							</Panel>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+				<GridSplitter
+					x:Name="SidebarSplitter"
+					Grid.Column="1"
+					Width="4"
+					Classes="thin"
+					IsVisible="{Binding IsSidebarOpen}"
+					ResizeDirection="Columns" />
+
+				<Border
+					Grid.Column="2"
+					Background="{DynamicResource App.Theme.FileAreaBrush}"
+					BorderBrush="{DynamicResource App.Theme.CardBorderBrush}"
+					BorderThickness="1,1,0,0"
+					ClipToBounds="True"
+					CornerRadius="8,0,0,0">
+					<v:ShellView x:Name="Shell" DataContext="{Binding SelectedTab}" />
+				</Border>
+			</Grid>
+		</Grid>
+
+		<!--  Dialog host (ContentDialog-style overlay)  -->
+		<Panel
+			x:Name="DialogLayer"
+			Background="{DynamicResource App.Theme.DialogSmokeBrush}"
+			IsVisible="False">
+			<Border
+				x:Name="DialogCard"
+				MinWidth="360"
+				MaxWidth="560"
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center"
+				Background="{DynamicResource App.Theme.DialogBrush}"
+				BorderBrush="{DynamicResource App.Theme.CardBorderBrush}"
+				BorderThickness="1"
+				BoxShadow="0 8 32 0 #40000000"
+				ClipToBounds="True"
+				CornerRadius="8" />
+		</Panel>
+	</Panel>
+</Window>

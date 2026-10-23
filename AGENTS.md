@@ -1,4 +1,4 @@
-# Repository Instructions
+﻿# Repository Instructions
 
 This repository contains the Files Windows desktop app, a WinUI-based file manager for Windows. The codebase includes the main app, reusable controls, storage layers, Win32/CsWin32 interop, packaging support, background/server components, and UI/interaction tests.
 
@@ -7,6 +7,7 @@ This repository contains the Files Windows desktop app, a WinUI-based file manag
 ```text
 /src
 ├── Files.App                  // Main WinUI desktop app: startup, DI, views, view models, actions, services, dialogs, styles, assets, strings, and app helpers.
+├── Files.App.Linux            // Linux port (Avalonia). Reuses Files.App/Strings for translations. See docs/linux.md.
 ├── Files.App.CsWin32          // CsWin32 source-generated Win32 interop. Add APIs to NativeMethods.txt here.
 ├── Files.App.Controls         // Reusable WinUI controls shared by the app.
 ├── Files.App.Storage          // App-facing storage abstractions and storage implementation pieces.
@@ -25,6 +26,7 @@ This repository contains the Files Windows desktop app, a WinUI-based file manag
 /tests
 ├── Files.App.UITests      // UI test assets and views.
 ├── Files.InteractionTests // Interaction tests used by CI automation.
+├── Files.App.Linux.Tests  // Unit and headless UI tests for the Linux port.
 └── Files.App.UnitTests    // Placeholder/stale in this checkout; verify project files before assuming unit tests exist here.
 ```
 
@@ -41,6 +43,16 @@ For normal local verification, build with MSBuild restore and explicit configura
 
 ```powershell
 msbuild -restore src\Files.App\Files.App.csproj /p:Configuration=Debug /p:Platform=x64
+```
+
+## When Working on the Linux Port
+
+The Linux port lives in `src/Files.App.Linux` and builds on Linux with the .NET 10 SDK. It is not part of `Files.slnx`; use `Files.Linux.slnx`. See [docs/linux.md](docs/linux.md).
+
+```sh
+dotnet build Files.Linux.slnx
+dotnet run --project tests/Files.App.Linux.Tests
+packaging/linux/build-deb.sh amd64 1.0.0
 ```
 
 ## When Packaging the App

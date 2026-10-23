@@ -109,7 +109,22 @@ public static class FileSystemService
 
 	private sealed class FileItemComparer(SortColumn column, bool descending, bool foldersFirst) : IComparer<FileItem>
 	{
-		private static readonly StringComparer NameComparer = StringComparer.Create(System.Globalization.CultureInfo.CurrentCulture, System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.NumericOrdering);
+		private static readonly StringComparer NameComparer = CreateNameComparer();
+
+		/// <summary>Natural sort ("file 2" before "file 10"). Falls back to ordinal when ICU isn't available (invariant globalization).</summary>
+		private static StringComparer CreateNameComparer()
+		{
+			try
+			{
+				var comparer = StringComparer.Create(System.Globalization.CultureInfo.CurrentCulture, System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.NumericOrdering);
+				comparer.Compare("a2", "a10");
+				return comparer;
+			}
+			catch (Exception)
+			{
+				return StringComparer.OrdinalIgnoreCase;
+			}
+		}
 
 		public int Compare(FileItem? x, FileItem? y)
 		{

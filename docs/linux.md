@@ -20,7 +20,7 @@ To make Files the default file manager (for "Open folder" actions in other apps)
 xdg-mime default files-app.desktop inode/directory
 ```
 
-The package is self-contained: it does not need a .NET runtime on the machine. Uninstall with `sudo apt remove files-app`.
+The package is self-contained: it does not need a .NET runtime on the machine. ICU (`libicu*`) is only recommended; if no version is installed, the `files` launcher starts the app in invariant globalization mode (translations still follow `LANG`, dates use a neutral format). Uninstall with `sudo apt remove files-app`.
 
 ## Build from source
 

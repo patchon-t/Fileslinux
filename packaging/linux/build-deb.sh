@@ -38,7 +38,7 @@ dotnet publish "$ROOT/src/Files.App.Linux/Files.App.Linux.csproj" \
 	-p:DebugType=none \
 	-o "$STAGE$INSTALL_DIR"
 
-ln -s "$INSTALL_DIR/files" "$STAGE/usr/bin/files"
+install -m 755 "$HERE/files.sh" "$STAGE/usr/bin/files"
 install -m 644 "$HERE/files-app.desktop" "$STAGE/usr/share/applications/files-app.desktop"
 install -m 644 "$HERE/files-app.metainfo.xml" "$STAGE/usr/share/metainfo/files-app.metainfo.xml"
 for size in 32 48 64 128 256; do
@@ -65,8 +65,8 @@ Architecture: $ARCH
 Installed-Size: $INSTALLED_SIZE
 Maintainer: Files Community <hello@files.community>
 Homepage: https://files.community
-Depends: libc6, libgcc-s1, libstdc++6, zlib1g, libfontconfig1, libx11-6, libice6, libsm6, libicu76 | libicu74 | libicu72 | libicu71 | libicu70 | libicu67 | libicu63, xdg-utils
-Recommends: x-terminal-emulator, gvfs
+Depends: libc6, libgcc-s1, libstdc++6, zlib1g, libfontconfig1, libx11-6, libice6, libsm6, xdg-utils
+Recommends: libicu78 | libicu77 | libicu76 | libicu74 | libicu72 | libicu71 | libicu70 | libicu67, x-terminal-emulator, gvfs
 Description: Modern file manager
  Files is a modern file manager with tabs, a sidebar with pinned folders
  and drives, details/list/grid layouts, a details and preview pane,

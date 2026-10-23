@@ -27,11 +27,28 @@ public static class Loc
 		var lang = language;
 		if (string.IsNullOrEmpty(lang))
 			lang = CultureInfo.CurrentUICulture.Name;
+		if (string.IsNullOrEmpty(lang))
+			lang = LanguageFromEnvironment();
 
 		var dir = ResolveLanguageDir(baseDir, lang);
 		CurrentLanguage = dir ?? "en-US";
 		_strings = dir is null ? _fallback : Read(Path.Combine(baseDir, dir, "Resources.resw"));
 		_loaded = true;
+	}
+
+	/// <summary>Reads LC_ALL / LC_MESSAGES / LANG (e.g. "de_DE.UTF-8" becomes "de-DE"). Used when .NET runs without ICU.</summary>
+	internal static string LanguageFromEnvironment()
+	{
+		foreach (var name in new[] { "LC_ALL", "LC_MESSAGES", "LANG" })
+		{
+			var value = Environment.GetEnvironmentVariable(name);
+			if (string.IsNullOrEmpty(value) || value is "C" or "POSIX" || value.StartsWith("C.", StringComparison.Ordinal))
+				continue;
+			var code = value.Split('.', '@')[0].Replace('_', '-');
+			if (code.Length > 0)
+				return code;
+		}
+		return "en-US";
 	}
 
 	public static IReadOnlyList<string> AvailableLanguages()

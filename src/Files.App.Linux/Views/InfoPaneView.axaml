@@ -1,0 +1,98 @@
+<!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
+<UserControl
+	x:Class="Files.App.Linux.Views.InfoPaneView"
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:c="using:Files.App.Linux.Controls"
+	xmlns:ic="using:FluentIcons.Avalonia"
+	xmlns:vm="using:Files.App.Linux.ViewModels"
+	x:DataType="vm:PreviewViewModel"
+	Background="{DynamicResource App.Theme.InfoPaneBrush}">
+
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+		<StackPanel Margin="16,16,16,24" Spacing="12">
+
+			<!--  Preview  -->
+			<Border
+				MinHeight="160"
+				Padding="8"
+				Background="{DynamicResource App.Theme.FileAreaBrush}"
+				CornerRadius="8">
+				<Panel>
+					<Image
+						MaxHeight="280"
+						IsVisible="{Binding HasImage}"
+						Source="{Binding Image}"
+						Stretch="Uniform" />
+					<TextBlock
+						MaxHeight="280"
+						FontFamily="DejaVu Sans Mono, Liberation Mono, Noto Mono, monospace"
+						FontSize="11"
+						IsVisible="{Binding HasText}"
+						Text="{Binding Text}"
+						TextTrimming="CharacterEllipsis"
+						TextWrapping="NoWrap" />
+					<c:ItemIcon
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						IconSize="96"
+						Item="{Binding Item}">
+						<c:ItemIcon.IsVisible>
+							<MultiBinding Converter="{x:Static BoolConverters.And}">
+								<Binding Path="!HasImage" />
+								<Binding Path="!HasText" />
+							</MultiBinding>
+						</c:ItemIcon.IsVisible>
+					</c:ItemIcon>
+					<ic:SymbolIcon
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						FontSize="48"
+						Foreground="{DynamicResource App.Theme.TertiaryTextBrush}"
+						IsVisible="{Binding !HasSelection}"
+						Symbol="Info" />
+					<ic:SymbolIcon
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						FontSize="48"
+						Foreground="{DynamicResource App.Theme.TertiaryTextBrush}"
+						IsVisible="{Binding IsMultiple}"
+						Symbol="DocumentCopy" />
+				</Panel>
+			</Border>
+
+			<StackPanel Spacing="2">
+				<TextBlock
+					FontSize="16"
+					FontWeight="SemiBold"
+					Text="{Binding Title}"
+					TextWrapping="Wrap" />
+				<TextBlock
+					Classes="secondary"
+					FontSize="12"
+					Text="{Binding Subtitle}" />
+			</StackPanel>
+
+			<Rectangle
+				Height="1"
+				Fill="{DynamicResource App.Theme.DividerBrush}" />
+
+			<ItemsControl ItemsSource="{Binding Properties}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate x:DataType="vm:PropertyRow">
+						<StackPanel Margin="0,0,0,10" Spacing="2">
+							<TextBlock
+								Classes="secondary"
+								FontSize="12"
+								Text="{Binding Name}" />
+							<SelectableTextBlock
+								FontSize="13"
+								Text="{Binding Value}"
+								TextWrapping="Wrap" />
+						</StackPanel>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</StackPanel>
+	</ScrollViewer>
+</UserControl>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.files_community.files</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Files</name>
+  <summary>A modern file manager</summary>
+  <description>
+    <p>Files is a modern file manager with tabs, a sidebar with pinned folders and drives, multiple layouts, a details and preview pane, search, and full trash support.</p>
+  </description>
+  <launchable type="desktop-id">files-app.desktop</launchable>
+  <url type="homepage">https://files.community</url>
+  <provides>
+    <binary>files</binary>
+  </provides>
+  <content_rating type="oars-1.1" />
+</component>

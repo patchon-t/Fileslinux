@@ -1,0 +1,212 @@
+<!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Style Selector="Window">
+		<Setter Property="FontSize" Value="14" />
+	</Style>
+
+	<!--  Subtle (transparent) buttons, like AddressToolbarButtonStyle on Windows  -->
+	<Style Selector="Button.subtle, ToggleButton.subtle, SplitButton.subtle /template/ Button, DropDownButton.subtle">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="CornerRadius" Value="4" />
+		<Setter Property="Padding" Value="8,6" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TextPrimaryBrush}" />
+	</Style>
+	<Style Selector="Button.subtle:pointerover /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.subtle:pointerover /template/ ContentPresenter#PART_ContentPresenter, DropDownButton.subtle:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtleHoverBrush}" />
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TextPrimaryBrush}" />
+	</Style>
+	<Style Selector="Button.subtle:pressed /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.subtle:pressed /template/ ContentPresenter#PART_ContentPresenter, DropDownButton.subtle:pressed /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtlePressedBrush}" />
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.SecondaryTextBrush}" />
+	</Style>
+	<Style Selector="Button.subtle:disabled /template/ ContentPresenter#PART_ContentPresenter, DropDownButton.subtle:disabled /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="Transparent" />
+	</Style>
+	<Style Selector="DropDownButton.subtle:disabled, Button.subtle:disabled">
+		<Setter Property="Background" Value="Transparent" />
+	</Style>
+	<Style Selector="DropDownButton.subtle:disabled /template/ ContentPresenter">
+		<Setter Property="Background" Value="Transparent" />
+	</Style>
+	<Style Selector="ToggleButton.subtle:checked /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtleHoverBrush}" />
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TextPrimaryBrush}" />
+	</Style>
+	<Style Selector="ToggleButton.subtle:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SelectedItemBrush}" />
+	</Style>
+
+	<!--  Navigation buttons (back / forward / up / refresh)  -->
+	<Style Selector="Button.nav, ToggleButton.nav">
+		<Setter Property="Width" Value="36" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+	</Style>
+
+	<!--  Toolbar buttons with icon + label  -->
+	<Style Selector="Button.toolbar, DropDownButton.toolbar, ToggleButton.toolbar">
+		<Setter Property="Height" Value="32" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="Margin" Value="1,0" />
+	</Style>
+
+	<!--  Accent button  -->
+	<Style Selector="Button.accent">
+		<Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
+		<Setter Property="Foreground" Value="{DynamicResource AccentButtonForeground}" />
+	</Style>
+	<Style Selector="Button.danger">
+		<Setter Property="Background" Value="#C42B1C" />
+		<Setter Property="Foreground" Value="White" />
+	</Style>
+	<Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="#B12619" />
+		<Setter Property="Foreground" Value="White" />
+	</Style>
+
+	<!--  Generic subtle list items (sidebar, file layouts, tab strip)  -->
+	<Style Selector="ListBox.subtle">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="Padding" Value="0" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem">
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="CornerRadius" Value="4" />
+		<Setter Property="MinHeight" Value="0" />
+		<Setter Property="Background" Value="Transparent" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtleHoverBrush}" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtlePressedBrush}" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SelectedItemBrush}" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SelectedItemHoverBrush}" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SelectedItemBrush}" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SelectedItemHoverBrush}" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TextPrimaryBrush}" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TextPrimaryBrush}" />
+	</Style>
+
+	<!--  File layout items  -->
+	<Style Selector="ListBox.files ListBoxItem">
+		<Setter Property="Margin" Value="4,0" />
+	</Style>
+	<Style Selector="ListBox.grid ListBoxItem">
+		<Setter Property="Margin" Value="2" />
+		<Setter Property="VerticalContentAlignment" Value="Stretch" />
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+	</Style>
+
+	<!--  Selection pill shown on selected sidebar items, as on Windows  -->
+	<Style Selector="Border.pill">
+		<Setter Property="IsVisible" Value="False" />
+	</Style>
+	<Style Selector="ListBoxItem:selected Border.pill">
+		<Setter Property="IsVisible" Value="True" />
+	</Style>
+
+	<!--  Tab strip  -->
+	<Style Selector="ListBox.tabs ListBoxItem">
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Margin" Value="0,0,1,0" />
+		<Setter Property="CornerRadius" Value="8,8,0,0" />
+		<Setter Property="MinHeight" Value="0" />
+		<Setter Property="Height" Value="34" />
+		<Setter Property="VerticalAlignment" Value="Bottom" />
+	</Style>
+	<Style Selector="ListBox.tabs ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtleHoverBrush}" />
+	</Style>
+	<Style Selector="ListBox.tabs ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ListBox.tabs ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.tabs ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter, ListBox.tabs ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.TabSelectedBrush}" />
+	</Style>
+	<Style Selector="ListBox.tabs ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TextPrimaryBrush}" />
+	</Style>
+	<Style Selector="ListBox.tabs ListBoxItem Button.tabclose">
+		<Setter Property="Opacity" Value="0" />
+	</Style>
+	<Style Selector="ListBox.tabs ListBoxItem:pointerover Button.tabclose, ListBox.tabs ListBoxItem:selected Button.tabclose">
+		<Setter Property="Opacity" Value="1" />
+	</Style>
+
+	<!--  Text  -->
+	<Style Selector="TextBlock.secondary">
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.SecondaryTextBrush}" />
+	</Style>
+	<Style Selector="TextBlock.tertiary">
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TertiaryTextBrush}" />
+	</Style>
+	<Style Selector="TextBlock.header">
+		<Setter Property="FontSize" Value="14" />
+		<Setter Property="FontWeight" Value="SemiBold" />
+	</Style>
+	<Style Selector="TextBlock.title">
+		<Setter Property="FontSize" Value="20" />
+		<Setter Property="FontWeight" Value="SemiBold" />
+	</Style>
+
+	<!--  Details header column buttons  -->
+	<Style Selector="Button.column">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="CornerRadius" Value="4" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="HorizontalContentAlignment" Value="Left" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.SecondaryTextBrush}" />
+		<Setter Property="FontSize" Value="12" />
+	</Style>
+	<Style Selector="Button.column:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtleHoverBrush}" />
+	</Style>
+
+	<!--  Thin splitters  -->
+	<Style Selector="GridSplitter.thin">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="MinWidth" Value="4" />
+	</Style>
+	<Style Selector="GridSplitter.thin:pointerover">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.DividerBrush}" />
+	</Style>
+
+	<!--  Menu items  -->
+	<Style Selector="MenuItem">
+		<Setter Property="Padding" Value="11,7" />
+	</Style>
+
+	<!--  Cards on the Home page  -->
+	<Style Selector="Button.card">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.CardBrush}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource App.Theme.CardBorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="CornerRadius" Value="6" />
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Stretch" />
+	</Style>
+	<Style Selector="Button.card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtleHoverBrush}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource App.Theme.CardBorderBrush}" />
+	</Style>
+</Styles>

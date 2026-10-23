@@ -1,0 +1,300 @@
+<!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
+<Window
+	x:Class="Files.App.Linux.Views.SettingsWindow"
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:conv="using:Files.App.Linux.Converters"
+	xmlns:ic="using:FluentIcons.Avalonia"
+	xmlns:v="using:Files.App.Linux.Views"
+	xmlns:vm="using:Files.App.Linux.ViewModels"
+	Title="{v:Loc Settings, Settings}"
+	Width="860"
+	Height="600"
+	MinWidth="560"
+	MinHeight="400"
+	x:DataType="vm:SettingsViewModel"
+	Background="{DynamicResource App.Theme.ChromeBrush}"
+	Icon="/Assets/files.png"
+	WindowStartupLocation="CenterOwner">
+
+	<Window.Styles>
+		<Style Selector="Border.setting">
+			<Setter Property="Background" Value="{DynamicResource App.Theme.CardBrush}" />
+			<Setter Property="BorderBrush" Value="{DynamicResource App.Theme.CardBorderBrush}" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="Padding" Value="16,12" />
+			<Setter Property="MinHeight" Value="64" />
+		</Style>
+		<Style Selector="Border.setting > Grid > ic|SymbolIcon">
+			<Setter Property="FontSize" Value="20" />
+			<Setter Property="Margin" Value="0,0,16,0" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="ComboBox">
+			<Setter Property="MinWidth" Value="200" />
+		</Style>
+	</Window.Styles>
+
+	<Grid ColumnDefinitions="220,*">
+		<StackPanel Margin="8,12,4,8" Spacing="4">
+			<TextBlock
+				Margin="12,0,0,12"
+				Classes="title"
+				Text="{v:Loc Settings, Settings}" />
+			<ListBox Classes="subtle" SelectedIndex="{Binding Page}">
+				<ListBoxItem>
+					<StackPanel Margin="12,8" Orientation="Horizontal" Spacing="12">
+						<ic:SymbolIcon FontSize="16" Symbol="Settings" />
+						<TextBlock Text="{v:Loc General, General}" />
+					</StackPanel>
+				</ListBoxItem>
+				<ListBoxItem>
+					<StackPanel Margin="12,8" Orientation="Horizontal" Spacing="12">
+						<ic:SymbolIcon FontSize="16" Symbol="PaintBrush" />
+						<TextBlock Text="{v:Loc Appearance, Appearance}" />
+					</StackPanel>
+				</ListBoxItem>
+				<ListBoxItem>
+					<StackPanel Margin="12,8" Orientation="Horizontal" Spacing="12">
+						<ic:SymbolIcon FontSize="16" Symbol="Folder" />
+						<TextBlock Text="{v:Loc FilesAndFolders, Files &amp; folders}" />
+					</StackPanel>
+				</ListBoxItem>
+				<ListBoxItem>
+					<StackPanel Margin="12,8" Orientation="Horizontal" Spacing="12">
+						<ic:SymbolIcon FontSize="16" Symbol="Info" />
+						<TextBlock Text="{v:Loc About, About}" />
+					</StackPanel>
+				</ListBoxItem>
+			</ListBox>
+		</StackPanel>
+
+		<Border
+			Grid.Column="1"
+			Background="{DynamicResource App.Theme.FileAreaBrush}"
+			BorderBrush="{DynamicResource App.Theme.CardBorderBrush}"
+			BorderThickness="1,1,0,0"
+			CornerRadius="8,0,0,0">
+			<ScrollViewer>
+				<Panel Margin="24,20,24,24">
+
+					<!--  General  -->
+					<StackPanel IsVisible="{Binding Page, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter=0}" Spacing="6">
+						<TextBlock Margin="0,0,0,12" Classes="title" Text="{v:Loc General, General}" />
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="LocalLanguage" />
+								<StackPanel Grid.Column="1" VerticalAlignment="Center">
+									<TextBlock Text="{v:Loc Language, Language}" />
+									<TextBlock
+										Classes="secondary"
+										FontSize="12"
+										IsVisible="{Binding LanguageRestartRequired}"
+										Text="{v:Loc RestartToApplyLanguage, Restart Files to apply the new language.}" />
+								</StackPanel>
+								<ComboBox
+									Grid.Column="2"
+									ItemsSource="{Binding Languages}"
+									SelectedItem="{Binding SelectedLanguage}" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="Power" />
+								<TextBlock
+									Grid.Column="1"
+									VerticalAlignment="Center"
+									Text="{v:Loc StartupSettings, Startup settings}" />
+								<ComboBox
+									Grid.Column="2"
+									ItemsSource="{Binding StartupOptions}"
+									SelectedItem="{Binding SelectedStartup}" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="WindowConsole" />
+								<StackPanel Grid.Column="1" VerticalAlignment="Center">
+									<TextBlock Text="{v:Loc TerminalApplication, Terminal application}" />
+									<TextBlock
+										Classes="secondary"
+										FontSize="12"
+										Text="Leave empty to use x-terminal-emulator" />
+								</StackPanel>
+								<TextBox
+									Grid.Column="2"
+									Width="220"
+									Text="{Binding TerminalCommand}"
+									Watermark="x-terminal-emulator" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="Pin" />
+								<TextBlock
+									Grid.Column="1"
+									VerticalAlignment="Center"
+									Text="{v:Loc RestoreDefaultPinnedItems, Restore the default pinned items}" />
+								<Button
+									Grid.Column="2"
+									Command="{Binding ResetPinnedCommand}"
+									Content="{v:Loc Restore, Restore}" />
+							</Grid>
+						</Border>
+					</StackPanel>
+
+					<!--  Appearance  -->
+					<StackPanel IsVisible="{Binding Page, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter=1}" Spacing="6">
+						<TextBlock Margin="0,0,0,12" Classes="title" Text="{v:Loc Appearance, Appearance}" />
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="DarkTheme" />
+								<TextBlock
+									Grid.Column="1"
+									VerticalAlignment="Center"
+									Text="{v:Loc SettingsAppearanceTheme, Theme}" />
+								<ComboBox
+									Grid.Column="2"
+									ItemsSource="{Binding Themes}"
+									SelectedItem="{Binding SelectedTheme}" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="Grid" />
+								<TextBlock
+									Grid.Column="1"
+									VerticalAlignment="Center"
+									Text="{v:Loc DefaultLayout, Default layout}" />
+								<ComboBox
+									Grid.Column="2"
+									ItemsSource="{Binding Layouts}"
+									SelectedItem="{Binding SelectedLayout}" />
+							</Grid>
+						</Border>
+					</StackPanel>
+
+					<!--  Files & folders  -->
+					<StackPanel IsVisible="{Binding Page, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter=2}" Spacing="6">
+						<TextBlock Margin="0,0,0,12" Classes="title" Text="{v:Loc FilesAndFolders, Files &amp; folders}" />
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="Eye" />
+								<TextBlock
+									Grid.Column="1"
+									VerticalAlignment="Center"
+									Text="{v:Loc SettingsFilesAndFoldersShowHiddenItems, Show hidden files and folders}" />
+								<ToggleSwitch
+									Grid.Column="2"
+									IsChecked="{Binding ShowHiddenItems}"
+									OffContent=""
+									OnContent="" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="DocumentText" />
+								<TextBlock
+									Grid.Column="1"
+									VerticalAlignment="Center"
+									Text="{v:Loc SettingsFilesAndFoldersShowFileExtensions, Show file extensions}" />
+								<ToggleSwitch
+									Grid.Column="2"
+									IsChecked="{Binding ShowFileExtensions}"
+									OffContent=""
+									OnContent="" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="Image" />
+								<TextBlock
+									Grid.Column="1"
+									VerticalAlignment="Center"
+									Text="{v:Loc ShowThumbnails, Show thumbnails}" />
+								<ToggleSwitch
+									Grid.Column="2"
+									IsChecked="{Binding ShowThumbnails}"
+									OffContent=""
+									OnContent="" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="Delete" />
+								<TextBlock
+									Grid.Column="1"
+									VerticalAlignment="Center"
+									Text="{v:Loc ShowConfirmationWhenDeletingItems, Show a confirmation dialog when deleting items}" />
+								<ToggleSwitch
+									Grid.Column="2"
+									IsChecked="{Binding ShowDeleteConfirmation}"
+									OffContent=""
+									OnContent="" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="ArrowSort" />
+								<TextBlock
+									Grid.Column="1"
+									VerticalAlignment="Center"
+									Text="{v:Loc SettingsListAndSortDirectoriesAlongsideFiles, List folders before files}" />
+								<ToggleSwitch
+									Grid.Column="2"
+									IsChecked="{Binding FoldersFirst}"
+									OffContent=""
+									OnContent="" />
+							</Grid>
+						</Border>
+					</StackPanel>
+
+					<!--  About  -->
+					<StackPanel IsVisible="{Binding Page, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter=3}" Spacing="6">
+						<TextBlock Margin="0,0,0,12" Classes="title" Text="{v:Loc About, About}" />
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*">
+								<Image
+									Width="48"
+									Height="48"
+									Margin="0,0,16,0"
+									Source="/Assets/files.png" />
+								<StackPanel Grid.Column="1" VerticalAlignment="Center">
+									<TextBlock FontSize="16" FontWeight="SemiBold" Text="Files for Linux" />
+									<TextBlock Classes="secondary" FontSize="12">
+										<Run Text="{v:Loc AppVersion, App version}" />
+										<Run Text=": " />
+										<Run Text="{Binding Version}" />
+									</TextBlock>
+								</StackPanel>
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="DocumentSettings" />
+								<StackPanel Grid.Column="1" VerticalAlignment="Center">
+									<TextBlock Text="{v:Loc EditSettingsFile, Edit settings file}" />
+									<TextBlock
+										Classes="secondary"
+										FontSize="12"
+										Text="{Binding SettingsPath}" />
+								</StackPanel>
+								<Button
+									Grid.Column="2"
+									Command="{Binding OpenSettingsFileCommand}"
+									Content="{v:Loc Open, Open}" />
+							</Grid>
+						</Border>
+						<TextBlock
+							Margin="4,12,0,0"
+							Classes="secondary"
+							FontSize="12"
+							Text="Files is an open-source file manager by the Files Community, licensed under the MIT License."
+							TextWrapping="Wrap" />
+					</StackPanel>
+				</Panel>
+			</ScrollViewer>
+		</Border>
+	</Grid>
+</Window>

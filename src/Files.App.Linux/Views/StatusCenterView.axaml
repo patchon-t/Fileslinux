@@ -1,0 +1,72 @@
+<!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
+<UserControl
+	x:Class="Files.App.Linux.Views.StatusCenterView"
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:ic="using:FluentIcons.Avalonia"
+	xmlns:v="using:Files.App.Linux.Views"
+	xmlns:vm="using:Files.App.Linux.ViewModels"
+	Width="380"
+	x:DataType="vm:OperationsViewModel">
+	<StackPanel Spacing="8">
+		<Grid ColumnDefinitions="*,Auto">
+			<TextBlock
+				VerticalAlignment="Center"
+				Classes="header"
+				Text="{v:Loc StatusCenter, Status center}" />
+			<Button
+				Grid.Column="1"
+				Classes="subtle"
+				Command="{Binding ClearFinishedCommand}"
+				Content="{v:Loc Clear, Clear}" />
+		</Grid>
+		<ScrollViewer MaxHeight="400">
+			<ItemsControl ItemsSource="{Binding Items}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate x:DataType="vm:OperationItem">
+						<Border
+							Margin="0,0,0,6"
+							Padding="12,10"
+							Background="{DynamicResource App.Theme.SubtleHoverBrush}"
+							CornerRadius="6">
+							<Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+								<TextBlock
+									FontSize="13"
+									Text="{Binding Title}"
+									TextTrimming="CharacterEllipsis" />
+								<Button
+									Grid.RowSpan="3"
+									Grid.Column="1"
+									Width="28"
+									Height="28"
+									Margin="8,0,0,0"
+									Padding="0"
+									HorizontalContentAlignment="Center"
+									Classes="subtle"
+									Command="{Binding CancelCommand}"
+									IsVisible="{Binding IsRunning}"
+									ToolTip.Tip="{v:Loc Cancel, Cancel}">
+									<ic:SymbolIcon FontSize="12" Symbol="Dismiss" />
+								</Button>
+								<ProgressBar
+									Grid.Row="1"
+									Margin="0,8,0,4"
+									IsIndeterminate="{Binding IsIndeterminate}"
+									IsVisible="{Binding IsRunning}"
+									Maximum="100"
+									Value="{Binding Percent}" />
+								<TextBlock
+									Grid.Row="2"
+									Classes="secondary"
+									Classes.failed="{Binding IsFailed}"
+									FontSize="12"
+									Text="{Binding Status}"
+									TextWrapping="Wrap" />
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+	</StackPanel>
+</UserControl>

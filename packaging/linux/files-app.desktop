@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Name=Files
+GenericName=File Manager
+Comment=A modern file manager with tabs, a details pane and the Windows Files look
+Keywords=folder;manager;explore;disk;filesystem;files;
+Exec=files %U
+Icon=files-app
+Terminal=false
+StartupNotify=true
+StartupWMClass=files
+Categories=System;FileTools;FileManager;Utility;Core;
+MimeType=inode/directory;
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=files

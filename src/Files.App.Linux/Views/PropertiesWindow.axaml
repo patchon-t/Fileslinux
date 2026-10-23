@@ -1,0 +1,147 @@
+<!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
+<Window
+	x:Class="Files.App.Linux.Views.PropertiesWindow"
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:c="using:Files.App.Linux.Controls"
+	xmlns:v="using:Files.App.Linux.Views"
+	xmlns:vm="using:Files.App.Linux.ViewModels"
+	Title="{Binding Title}"
+	Width="460"
+	Height="620"
+	MinWidth="360"
+	x:DataType="vm:PropertiesViewModel"
+	Background="{DynamicResource App.Theme.ChromeBrush}"
+	Icon="/Assets/files.png"
+	WindowStartupLocation="CenterOwner">
+
+	<TabControl Padding="0" Margin="12,4,12,12">
+		<TabItem FontSize="14" Header="{v:Loc General, General}">
+			<ScrollViewer>
+				<Border
+					Padding="16"
+					Background="{DynamicResource App.Theme.FileAreaBrush}"
+					BorderBrush="{DynamicResource App.Theme.CardBorderBrush}"
+					BorderThickness="1"
+					CornerRadius="8">
+					<StackPanel Spacing="14">
+						<Grid ColumnDefinitions="Auto,*">
+							<c:ItemIcon
+								Margin="0,0,16,0"
+								IconSize="56"
+								Item="{Binding Item}" />
+							<SelectableTextBlock
+								Grid.Column="1"
+								VerticalAlignment="Center"
+								FontSize="18"
+								FontWeight="SemiBold"
+								Text="{Binding Name}"
+								TextWrapping="Wrap" />
+						</Grid>
+						<Rectangle Height="1" Fill="{DynamicResource App.Theme.DividerBrush}" />
+						<Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+							<TextBlock Classes="secondary" Text="{v:Loc PropertyItemTypeText, Item type}" />
+							<SelectableTextBlock Grid.Column="1" Text="{Binding TypeText}" TextWrapping="Wrap" />
+							<TextBlock Grid.Row="1" Margin="0,10,0,0" Classes="secondary" Text="{v:Loc Path, Path}" />
+							<SelectableTextBlock
+								Grid.Row="1"
+								Grid.Column="1"
+								Margin="0,10,0,0"
+								Text="{Binding Location}"
+								TextWrapping="Wrap" />
+							<TextBlock
+								Grid.Row="2"
+								Margin="0,10,0,0"
+								Classes="secondary"
+								IsVisible="{Binding HasLinkTarget}"
+								Text="{v:Loc LinkTarget, Link target}" />
+							<SelectableTextBlock
+								Grid.Row="2"
+								Grid.Column="1"
+								Margin="0,10,0,0"
+								IsVisible="{Binding HasLinkTarget}"
+								Text="{Binding LinkTarget}"
+								TextWrapping="Wrap" />
+							<TextBlock Grid.Row="3" Margin="0,10,0,0" Classes="secondary" Text="{v:Loc Size, Size}" />
+							<SelectableTextBlock
+								Grid.Row="3"
+								Grid.Column="1"
+								Margin="0,10,0,0"
+								Text="{Binding SizeText}"
+								TextWrapping="Wrap" />
+							<TextBlock
+								Grid.Row="4"
+								Margin="0,10,0,0"
+								Classes="secondary"
+								IsVisible="{Binding HasContains}"
+								Text="{v:Loc Contains, Contains}" />
+							<SelectableTextBlock
+								Grid.Row="4"
+								Grid.Column="1"
+								Margin="0,10,0,0"
+								IsVisible="{Binding HasContains}"
+								Text="{Binding ContainsText}" />
+						</Grid>
+						<Rectangle Height="1" Fill="{DynamicResource App.Theme.DividerBrush}" IsVisible="{Binding HasDates}" />
+						<Grid ColumnDefinitions="140,*" IsVisible="{Binding HasDates}" RowDefinitions="Auto,Auto,Auto">
+							<TextBlock Classes="secondary" Text="{v:Loc DateCreated, Date created}" />
+							<SelectableTextBlock Grid.Column="1" Text="{Binding Created}" />
+							<TextBlock Grid.Row="1" Margin="0,10,0,0" Classes="secondary" Text="{v:Loc DateModifiedLowerCase, Date modified}" />
+							<SelectableTextBlock Grid.Row="1" Grid.Column="1" Margin="0,10,0,0" Text="{Binding Modified}" />
+							<TextBlock Grid.Row="2" Margin="0,10,0,0" Classes="secondary" Text="{v:Loc DateAccessed, Date accessed}" />
+							<SelectableTextBlock Grid.Row="2" Grid.Column="1" Margin="0,10,0,0" Text="{Binding Accessed}" />
+						</Grid>
+					</StackPanel>
+				</Border>
+			</ScrollViewer>
+		</TabItem>
+
+		<TabItem FontSize="14" Header="{v:Loc Permissions, Permissions}" IsVisible="{Binding HasPermissions}">
+			<Border
+				Padding="16"
+				Background="{DynamicResource App.Theme.FileAreaBrush}"
+				BorderBrush="{DynamicResource App.Theme.CardBorderBrush}"
+				BorderThickness="1"
+				CornerRadius="8">
+				<StackPanel Spacing="14">
+					<Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto">
+						<TextBlock Classes="secondary" Text="{v:Loc PropertyFileOwner, Owner}" />
+						<SelectableTextBlock Grid.Column="1" Text="{Binding Owner}" />
+						<TextBlock Grid.Row="1" Margin="0,10,0,0" Classes="secondary" Text="{v:Loc Group, Group}" />
+						<SelectableTextBlock Grid.Row="1" Grid.Column="1" Margin="0,10,0,0" Text="{Binding Group}" />
+						<TextBlock Grid.Row="2" Margin="0,10,0,0" Classes="secondary" Text="{v:Loc Mode, Mode}" />
+						<SelectableTextBlock Grid.Row="2" Grid.Column="1" Margin="0,10,0,0" FontFamily="DejaVu Sans Mono, monospace" Text="{Binding ModeText}" />
+					</Grid>
+					<Rectangle Height="1" Fill="{DynamicResource App.Theme.DividerBrush}" />
+					<Grid ColumnDefinitions="100,*,*,*" RowDefinitions="Auto,Auto,Auto,Auto">
+						<TextBlock Grid.Column="1" Classes="secondary" Text="{v:Loc Read, Read}" />
+						<TextBlock Grid.Column="2" Classes="secondary" Text="{v:Loc Write, Write}" />
+						<TextBlock Grid.Column="3" Classes="secondary" Text="{v:Loc Execute, Execute}" />
+						<TextBlock Grid.Row="1" VerticalAlignment="Center" Text="{v:Loc PropertyFileOwner, Owner}" />
+						<CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding OwnerRead}" />
+						<CheckBox Grid.Row="1" Grid.Column="2" IsChecked="{Binding OwnerWrite}" />
+						<CheckBox Grid.Row="1" Grid.Column="3" IsChecked="{Binding OwnerExecute}" />
+						<TextBlock Grid.Row="2" VerticalAlignment="Center" Text="{v:Loc Group, Group}" />
+						<CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding GroupRead}" />
+						<CheckBox Grid.Row="2" Grid.Column="2" IsChecked="{Binding GroupWrite}" />
+						<CheckBox Grid.Row="2" Grid.Column="3" IsChecked="{Binding GroupExecute}" />
+						<TextBlock Grid.Row="3" VerticalAlignment="Center" Text="{v:Loc Others, Others}" />
+						<CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding OthersRead}" />
+						<CheckBox Grid.Row="3" Grid.Column="2" IsChecked="{Binding OthersWrite}" />
+						<CheckBox Grid.Row="3" Grid.Column="3" IsChecked="{Binding OthersExecute}" />
+					</Grid>
+					<TextBlock
+						Foreground="{DynamicResource App.Theme.CriticalBrush}"
+						IsVisible="{Binding PermissionError, Converter={x:Static ObjectConverters.IsNotNull}}"
+						Text="{Binding PermissionError}"
+						TextWrapping="Wrap" />
+					<Button
+						HorizontalAlignment="Right"
+						Classes="accent"
+						Command="{Binding ApplyPermissionsCommand}"
+						Content="{v:Loc Apply, Apply}" />
+				</StackPanel>
+			</Border>
+		</TabItem>
+	</TabControl>
+</Window>

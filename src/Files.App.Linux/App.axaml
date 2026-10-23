@@ -1,0 +1,75 @@
+<!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
+<Application
+	x:Class="Files.App.Linux.App"
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	Name="Files"
+	RequestedThemeVariant="Default">
+
+	<Application.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+				<!--  Colors mirror the Windows app (Mica base, LayerOnMicaBaseAlt chrome, card file area).  -->
+				<ResourceDictionary x:Key="Light">
+					<SolidColorBrush x:Key="App.Theme.WindowBrush" Color="#EEEEEE" />
+					<SolidColorBrush x:Key="App.Theme.ChromeBrush" Color="#F7F7F7" />
+					<SolidColorBrush x:Key="App.Theme.FileAreaBrush" Color="#FFFFFF" />
+					<SolidColorBrush x:Key="App.Theme.ToolbarBrush" Color="#FAFAFA" />
+					<SolidColorBrush x:Key="App.Theme.InfoPaneBrush" Color="#FAFAFA" />
+					<SolidColorBrush x:Key="App.Theme.CardBrush" Color="#FFFFFF" />
+					<SolidColorBrush x:Key="App.Theme.CardBorderBrush" Color="#E5E5E5" />
+					<SolidColorBrush x:Key="App.Theme.DividerBrush" Color="#E5E5E5" />
+					<SolidColorBrush x:Key="App.Theme.OmnibarBrush" Color="#FFFFFF" />
+					<SolidColorBrush x:Key="App.Theme.OmnibarBorderBrush" Color="#E0E0E0" />
+					<SolidColorBrush x:Key="App.Theme.SubtleHoverBrush" Color="#0A000000" />
+					<SolidColorBrush x:Key="App.Theme.SubtlePressedBrush" Color="#06000000" />
+					<SolidColorBrush x:Key="App.Theme.SelectedItemBrush" Color="#1F0078D4" />
+					<SolidColorBrush x:Key="App.Theme.SelectedItemHoverBrush" Color="#2B0078D4" />
+					<SolidColorBrush x:Key="App.Theme.AccentBrush" Color="#0067C0" />
+					<SolidColorBrush x:Key="App.Theme.TextPrimaryBrush" Color="#E4000000" />
+					<SolidColorBrush x:Key="App.Theme.SecondaryTextBrush" Color="#5F5F5F" />
+					<SolidColorBrush x:Key="App.Theme.TertiaryTextBrush" Color="#8A8A8A" />
+					<SolidColorBrush x:Key="App.Theme.IconBaseBrush" Color="#DB202020" />
+					<SolidColorBrush x:Key="App.Theme.TabSelectedBrush" Color="#F7F7F7" />
+					<SolidColorBrush x:Key="App.Theme.DialogSmokeBrush" Color="#4D000000" />
+					<SolidColorBrush x:Key="App.Theme.DialogBrush" Color="#FFFFFF" />
+					<SolidColorBrush x:Key="App.Theme.DialogFooterBrush" Color="#F3F3F3" />
+					<SolidColorBrush x:Key="App.Theme.ProgressTrackBrush" Color="#E0E0E0" />
+					<SolidColorBrush x:Key="App.Theme.CriticalBrush" Color="#C42B1C" />
+				</ResourceDictionary>
+				<ResourceDictionary x:Key="Dark">
+					<SolidColorBrush x:Key="App.Theme.WindowBrush" Color="#1C1C1C" />
+					<SolidColorBrush x:Key="App.Theme.ChromeBrush" Color="#262626" />
+					<SolidColorBrush x:Key="App.Theme.FileAreaBrush" Color="#2B2B2B" />
+					<SolidColorBrush x:Key="App.Theme.ToolbarBrush" Color="#2F2F2F" />
+					<SolidColorBrush x:Key="App.Theme.InfoPaneBrush" Color="#2F2F2F" />
+					<SolidColorBrush x:Key="App.Theme.CardBrush" Color="#323232" />
+					<SolidColorBrush x:Key="App.Theme.CardBorderBrush" Color="#1D1D1D" />
+					<SolidColorBrush x:Key="App.Theme.DividerBrush" Color="#3A3A3A" />
+					<SolidColorBrush x:Key="App.Theme.OmnibarBrush" Color="#2F2F2F" />
+					<SolidColorBrush x:Key="App.Theme.OmnibarBorderBrush" Color="#3A3A3A" />
+					<SolidColorBrush x:Key="App.Theme.SubtleHoverBrush" Color="#0FFFFFFF" />
+					<SolidColorBrush x:Key="App.Theme.SubtlePressedBrush" Color="#0AFFFFFF" />
+					<SolidColorBrush x:Key="App.Theme.SelectedItemBrush" Color="#3360CDFF" />
+					<SolidColorBrush x:Key="App.Theme.SelectedItemHoverBrush" Color="#4060CDFF" />
+					<SolidColorBrush x:Key="App.Theme.AccentBrush" Color="#60CDFF" />
+					<SolidColorBrush x:Key="App.Theme.TextPrimaryBrush" Color="#FFFFFF" />
+					<SolidColorBrush x:Key="App.Theme.SecondaryTextBrush" Color="#C5C5C5" />
+					<SolidColorBrush x:Key="App.Theme.TertiaryTextBrush" Color="#9A9A9A" />
+					<SolidColorBrush x:Key="App.Theme.IconBaseBrush" Color="#D8F0F0F0" />
+					<SolidColorBrush x:Key="App.Theme.TabSelectedBrush" Color="#262626" />
+					<SolidColorBrush x:Key="App.Theme.DialogSmokeBrush" Color="#66000000" />
+					<SolidColorBrush x:Key="App.Theme.DialogBrush" Color="#2B2B2B" />
+					<SolidColorBrush x:Key="App.Theme.DialogFooterBrush" Color="#202020" />
+					<SolidColorBrush x:Key="App.Theme.ProgressTrackBrush" Color="#454545" />
+					<SolidColorBrush x:Key="App.Theme.CriticalBrush" Color="#FF99A4" />
+				</ResourceDictionary>
+			</ResourceDictionary.ThemeDictionaries>
+		</ResourceDictionary>
+	</Application.Resources>
+
+	<Application.Styles>
+		<FluentTheme />
+		<StyleInclude Source="/Styles/Controls.axaml" />
+	</Application.Styles>
+</Application>

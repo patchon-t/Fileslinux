@@ -22,7 +22,8 @@ public static class TestEnvironment
 	{
 		Root = Path.Combine(Path.GetTempPath(), "files-linux-tests-" + Guid.NewGuid().ToString("N"));
 		Directory.CreateDirectory(Root);
-		var home = Path.Combine(Root, "home");
+		// FILES_DEMO_HOME lets the README screenshots show a realistic path such as /home/alex.
+		var home = Environment.GetEnvironmentVariable("FILES_DEMO_HOME") is { Length: > 0 } demo ? demo : Path.Combine(Root, "alex");
 		Directory.CreateDirectory(home);
 		foreach (var d in new[] { "Desktop", "Downloads", "Documents", "Pictures", "Music", "Videos" })
 			Directory.CreateDirectory(Path.Combine(home, d));

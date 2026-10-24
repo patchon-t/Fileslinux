@@ -266,4 +266,94 @@ public sealed class UiTests
 		Render(props, "11-properties");
 		props.Close();
 	});
+	/// <summary>Builds a realistic demo home and saves the screenshots used in the README (only when FILES_SCREENSHOT_DIR is set).</summary>
+	[TestMethod]
+	public Task ReadmeScreenshots() => RunAsync(async () =>
+	{
+		if (ScreenshotDir is null)
+			return;
+
+		var home = XdgPaths.Home;
+		var docs = Path.Combine(home, "Documents");
+		foreach (var d in new[] { "Invoices", "Projects", "Recipes", "Taxes 2026" })
+			Directory.CreateDirectory(Path.Combine(docs, d));
+		File.WriteAllText(Path.Combine(docs, "Meeting notes.md"), "# Weekly sync\n\n- Ship the Linux build\n- Review the new sidebar\n- Plan the 1.1 release\n\nOwner: Alex\n");
+		File.WriteAllText(Path.Combine(docs, "Quarterly report.pdf"), new string('x', 482_000));
+		File.WriteAllText(Path.Combine(docs, "Budget 2026.xlsx"), new string('x', 38_500));
+		File.WriteAllText(Path.Combine(docs, "Pitch deck.pptx"), new string('x', 2_400_000));
+		File.WriteAllText(Path.Combine(docs, "Cover letter.docx"), new string('x', 21_300));
+		File.WriteAllText(Path.Combine(docs, "Holiday photos.zip"), new string('x', 15_700_000));
+		File.WriteAllText(Path.Combine(docs, "todo.txt"), "buy milk\ncall mom\n");
+		File.WriteAllText(Path.Combine(docs, "backup.sh"), "#!/bin/sh\nrsync -a ~/Documents /mnt/backup\n");
+
+		// Colorful sample images for thumbnails.
+		var pics = Path.Combine(home, "Pictures");
+		var palette = new (string Name, string A, string B)[]
+		{
+			("Sunset.png", "#FF7E5F", "#FEB47B"), ("Ocean.png", "#2193B0", "#6DD5ED"), ("Forest.png", "#11998E", "#38EF7D"),
+			("Lavender.png", "#8E2DE2", "#C471F5"), ("Dawn.png", "#F7971E", "#FFD200"), ("Night sky.png", "#141E30", "#4B6CB7"),
+			("Berry.png", "#C33764", "#F06292"), ("Glacier.png", "#83A4D4", "#E0F7FA"),
+		};
+		foreach (var (name, a, b) in palette)
+		{
+			var bmp = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize(400, 300));
+			using (var ctx = bmp.CreateDrawingContext())
+			{
+				var brush = new Avalonia.Media.LinearGradientBrush
+				{
+					StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+					EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
+					GradientStops = { new(Avalonia.Media.Color.Parse(a), 0), new(Avalonia.Media.Color.Parse(b), 1) },
+				};
+				ctx.FillRectangle(brush, new Rect(0, 0, 400, 300));
+				ctx.DrawEllipse(new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromArgb(70, 255, 255, 255)), null, new Point(290, 110), 60, 60);
+			}
+			bmp.Save(Path.Combine(pics, name));
+		}
+		Directory.CreateDirectory(Path.Combine(pics, "Screenshots"));
+		Directory.CreateDirectory(Path.Combine(pics, "Wallpapers"));
+
+		// Recent files, in the GTK recently-used.xbel format the Home page reads.
+		var recent = new[] { "Meeting notes.md", "Budget 2026.xlsx", "Quarterly report.pdf", "Pitch deck.pptx" };
+		var xbel = "<?xml version=\"1.0\"?>\n<xbel version=\"1.0\">\n" + string.Join("\n", recent.Select((n, i) =>
+			$"  <bookmark href=\"{new Uri(Path.Combine(docs, n)).AbsoluteUri}\" modified=\"2026-10-2{4 - i}T10:00:00Z\" />")) + "\n</xbel>\n";
+		Directory.CreateDirectory(XdgPaths.DataHome);
+		File.WriteAllText(Path.Combine(XdgPaths.DataHome, "recently-used.xbel"), xbel);
+
+		var settings = SettingsService.Current;
+		settings.PinnedFolders = null;
+
+		// Home
+		var (window, vm) = Open(null);
+		var tab = vm.SelectedTab!;
+		await WaitUntil(() => tab.IsHome && tab.Home.QuickAccess.Count > 0 && tab.Home.HasRecentFiles);
+		vm.OpenTab(docs, activate: false);
+		vm.OpenTab(pics, activate: false);
+		Render(window, "readme-home");
+
+		// Details + details pane
+		tab.NavigateTo(docs);
+		await WaitUntil(() => !tab.IsLoading && tab.Items.Count > 0);
+		tab.SetLayoutCommand.Execute(LayoutMode.Details);
+		var notes = tab.Items.First(i => i.Name == "Meeting notes.md");
+		vm.IsInfoPaneOpen = true;
+		window.Shell.FocusActiveList();
+		window.Shell.ActiveList.SelectedItems!.Clear();
+		window.Shell.ActiveList.SelectedItems.Add(notes);
+		await WaitUntil(() => tab.Preview.HasText);
+		Render(window, "readme-details");
+
+		// Grid with thumbnails, dark theme
+		App.ApplyTheme(AppTheme.Dark);
+		vm.IsInfoPaneOpen = false;
+		tab.NavigateTo(pics);
+		await WaitUntil(() => !tab.IsLoading && tab.Items.Count > 0);
+		tab.SetLayoutCommand.Execute(LayoutMode.GridMedium);
+		await WaitUntil(() => tab.Items.Where(i => i.IsImage).All(i => i.Thumbnail is not null), 10000);
+		Render(window, "readme-grid-dark");
+
+		App.ApplyTheme(AppTheme.Light);
+		tab.SetLayoutCommand.Execute(LayoutMode.Details);
+		window.Close();
+	});
 }

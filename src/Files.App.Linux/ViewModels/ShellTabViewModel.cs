@@ -175,6 +175,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		}
 
 		_hasNavigated = true;
+		SetSelection([]);
 		IsSearchResults = false;
 		SearchQuery = string.Empty;
 		var previous = CurrentPath;

@@ -33,7 +33,7 @@
 
 ## ✨ Why Files?
 
-Files is an open-source file manager built by the community. It brings the things people miss in the default file manager — **tabs**, **a details and preview pane**, **pinned folders**, **fast search** and **a modern Fluent design** — into one polished app.
+Files is an open-source file manager built by the community. It brings the things people miss in the default file manager — **tabs**, **a details and preview pane**, **pinned folders**, **fast search** and **a modern Fluent design** — into one polished app we're getting this on linux for familiar experience.
 
 This repository contains both versions:
 

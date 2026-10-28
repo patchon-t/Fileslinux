@@ -4,6 +4,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Styling;
 using Files.App.Linux.Services;
 using Files.App.Linux.ViewModels;
@@ -20,6 +21,7 @@ public partial class App : Application
 		SettingsService.Load();
 		Loc.Load(SettingsService.Current.Language);
 		ApplyTheme(SettingsService.Current.Theme);
+		ApplyMotion(SettingsService.Current.EnableAnimations);
 
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{
@@ -31,6 +33,21 @@ public partial class App : Application
 		}
 
 		base.OnFrameworkInitializationCompleted();
+	}
+
+	private StyleInclude? _motionStyles;
+
+	/// <summary>Adds or removes the Windows-style animations (Styles/Motion.axaml).</summary>
+	public static void ApplyMotion(bool enabled)
+	{
+		if (Current is not App app)
+			return;
+		app._motionStyles ??= new StyleInclude(new Uri("avares://files/")) { Source = new Uri("avares://files/Styles/Motion.axaml") };
+		var styles = app.Styles;
+		if (enabled && !styles.Contains(app._motionStyles))
+			styles.Add(app._motionStyles);
+		else if (!enabled)
+			styles.Remove(app._motionStyles);
 	}
 
 	public static void ApplyTheme(AppTheme theme)

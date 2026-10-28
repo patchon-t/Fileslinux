@@ -69,6 +69,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 		ShowThumbnails = _s.ShowThumbnails;
 		ShowDeleteConfirmation = _s.ShowDeleteConfirmation;
 		FoldersFirst = _s.FoldersFirst;
+		EnableAnimations = _s.EnableAnimations;
 		TerminalCommand = _s.TerminalCommand ?? string.Empty;
 	}
 
@@ -115,6 +116,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 	public partial bool FoldersFirst { get; set; }
 
 	[ObservableProperty]
+	public partial bool EnableAnimations { get; set; }
+
+	[ObservableProperty]
 	public partial string TerminalCommand { get; set; }
 
 	[ObservableProperty]
@@ -155,6 +159,13 @@ public sealed partial class SettingsViewModel : ObservableObject
 	partial void OnShowThumbnailsChanged(bool value) => Update(() => _s.ShowThumbnails = value);
 
 	partial void OnShowDeleteConfirmationChanged(bool value) => Update(() => _s.ShowDeleteConfirmation = value, notify: false);
+
+	partial void OnEnableAnimationsChanged(bool value)
+	{
+		_s.EnableAnimations = value;
+		App.ApplyMotion(value);
+		SettingsService.Save();
+	}
 
 	partial void OnFoldersFirstChanged(bool value) => Update(() => _s.FoldersFirst = value);
 

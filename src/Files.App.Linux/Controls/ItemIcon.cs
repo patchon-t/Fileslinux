@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Files.App.Linux.Helpers;
 using Files.App.Linux.Models;
 using FluentIcons.Avalonia;
 using FluentIcons.Common;
@@ -99,7 +100,12 @@ public sealed class ItemIcon : ContentControl
 	private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
 	{
 		if (e.PropertyName is nameof(FileItem.Thumbnail) or nameof(FileItem.IsCut))
+		{
 			Rebuild();
+			// Thumbnails fade in over the placeholder icon as they finish loading.
+			if (e.PropertyName == nameof(FileItem.Thumbnail) && Content is Visual thumbnail)
+				_ = Motion.FadeInAsync(thumbnail);
+		}
 	}
 
 	private void Rebuild()

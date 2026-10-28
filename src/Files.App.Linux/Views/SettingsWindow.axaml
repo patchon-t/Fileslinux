@@ -77,7 +77,7 @@
 			BorderThickness="1,1,0,0"
 			CornerRadius="8,0,0,0">
 			<ScrollViewer>
-				<Panel Margin="24,20,24,24">
+				<Panel x:Name="Pages" Margin="24,20,24,24">
 
 					<!--  General  -->
 					<StackPanel IsVisible="{Binding Page, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter=0}" Spacing="6">
@@ -158,6 +158,23 @@
 									Grid.Column="2"
 									ItemsSource="{Binding Themes}"
 									SelectedItem="{Binding SelectedTheme}" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="Sparkle" />
+								<StackPanel Grid.Column="1" VerticalAlignment="Center">
+									<TextBlock Text="{v:Loc Animations, Animations}" />
+									<TextBlock
+										Classes="secondary"
+										FontSize="12"
+										Text="{v:Loc AnimationsDescription, Windows-style motion for folders and menus and dialogs}" />
+								</StackPanel>
+								<ToggleSwitch
+									Grid.Column="2"
+									IsChecked="{Binding EnableAnimations}"
+									OffContent=""
+									OnContent="" />
 							</Grid>
 						</Border>
 						<Border Classes="setting">

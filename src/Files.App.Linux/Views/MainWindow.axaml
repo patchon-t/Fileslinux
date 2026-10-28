@@ -284,7 +284,6 @@
 					x:Name="SidebarList"
 					Padding="4,0,4,8"
 					Classes="subtle sidebar"
-					IsVisible="{Binding IsSidebarOpen}"
 					ItemsSource="{Binding Sidebar.Items}"
 					SelectedItem="{Binding Sidebar.SelectedItem, Mode=OneWay}"
 					SelectionMode="Single">
@@ -359,7 +358,6 @@
 					Grid.Column="1"
 					Width="4"
 					Classes="thin"
-					IsVisible="{Binding IsSidebarOpen}"
 					ResizeDirection="Columns" />
 
 				<Border

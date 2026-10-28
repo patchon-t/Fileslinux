@@ -28,6 +28,7 @@ public partial class ShellView : UserControl
 	internal const string InternalDragFormat = "application/x-files-app-paths";
 
 	private ShellTabViewModel? _tab;
+	private MainWindowViewModel? _main;
 	private bool _syncingSelection;
 	private Point? _dragStart;
 	private string _typeAhead = string.Empty;
@@ -91,10 +92,26 @@ public partial class ShellView : UserControl
 			_tab.SelectionRequested += OnSelectionRequested;
 			_tab.Navigated += OnNavigated;
 			_tab.PropertyChanged += OnTabPropertyChanged;
+			_lastLocation = (_tab.CurrentPath ?? "home") + "|" + _tab.IsSearchResults;
+			if (_main != _tab.Main)
+			{
+				if (_main is not null)
+					_main.PropertyChanged -= OnMainPropertyChanged;
+				_main = _tab.Main;
+				_main.PropertyChanged += OnMainPropertyChanged;
+			}
+			Dispatcher.UIThread.Post(PlayEntranceAfterLayout, DispatcherPriority.Background);
 			DetailsColumns.SetShowLocation(_tab.ShowLocationColumn);
 			BuildHeader();
 			Dispatcher.UIThread.Post(() => ApplySelection(_tab.SelectedItems), DispatcherPriority.Background);
 		}
+	}
+
+	private void OnMainPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+	{
+		// The details pane slides in from the right when opened.
+		if (e.PropertyName == nameof(MainWindowViewModel.IsInfoPaneOpen) && _main?.IsInfoPaneOpen == true)
+			Dispatcher.UIThread.Post(() => _ = Motion.SlideInAsync(InfoPane, 40), DispatcherPriority.Background);
 	}
 
 	private void OnTabPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -111,12 +128,18 @@ public partial class ShellView : UserControl
 			{
 				ApplySelection(selected);
 				FocusActiveList();
+				PlayEntranceAfterLayout();
 			}, DispatcherPriority.Background);
 		}
 	}
 
 	private void OnNavigated(object? sender, EventArgs e)
 	{
+		// Refreshes (file watcher, F5) keep the same location and must not replay the entrance.
+		var location = (_tab?.CurrentPath ?? "home") + "|" + _tab?.IsSearchResults;
+		var isNewLocation = location != _lastLocation;
+		_lastLocation = location;
+
 		Dispatcher.UIThread.Post(() =>
 		{
 			var list = ActiveList;
@@ -124,7 +147,71 @@ public partial class ShellView : UserControl
 				sv.Offset = default;
 			if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not TextBox)
 				FocusActiveList();
+			if (isNewLocation)
+				PlayEntranceAfterLayout();
 		}, DispatcherPriority.Background);
+	}
+
+	private string? _lastLocation;
+	private string? _lastEntranceKey;
+	private long _lastEntranceTime;
+
+	/// <summary>Waits for the list to create rows for the new items, then plays the entrance on those rows.</summary>
+	private void PlayEntranceAfterLayout()
+	{
+		if (_tab is null || !Motion.IsEnabled)
+			return;
+		if (_tab.IsHome)
+		{
+			PlayEntrance();
+			return;
+		}
+		var list = ActiveList;
+		void OnLayoutUpdated(object? sender, EventArgs e)
+		{
+			list.LayoutUpdated -= OnLayoutUpdated;
+			PlayEntrance();
+		}
+		list.LayoutUpdated += OnLayoutUpdated;
+		list.InvalidateMeasure();
+	}
+
+	/// <summary>
+	/// Items fade and rise into place, staggered, like a WinUI ListView/GridView loading (EntranceThemeTransition).
+	/// The Home page plays the same entrance for its widgets.
+	/// </summary>
+	public void PlayEntrance()
+	{
+		if (_tab is null || !Motion.IsEnabled)
+			return;
+
+		// Opening a tab can trigger this twice (tab switch + first load); play it once.
+		var key = (_tab.CurrentPath ?? "home") + "|" + _tab.IsSearchResults + "|" + _tab.Layout;
+		var now = Environment.TickCount64;
+		if (key == _lastEntranceKey && now - _lastEntranceTime < 150)
+			return;
+		_lastEntranceKey = key;
+		_lastEntranceTime = now;
+		if (_tab.IsHome)
+		{
+			HomeHost.PlayEntrance();
+			return;
+		}
+		var list = ActiveList;
+		var items = _tab.Items.ToHashSet();
+		var containers = list.GetRealizedContainers()
+			.Where(c => c.DataContext is FileItem item && items.Contains(item))
+			.OrderBy(list.IndexFromContainer)
+			.Cast<Visual>()
+			.ToList();
+		if (containers.Count == 0)
+		{
+			_ = Motion.FadeInAsync(list);
+			return;
+		}
+		if (list == DetailsList)
+			_ = Motion.FadeInAsync(DetailsHeader);
+		Motion.StaggeredEntrance(containers);
 	}
 
 	public void FocusActiveList()

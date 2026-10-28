@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Files.App.Linux.Helpers;
 using Files.App.Linux.Models;
 using Files.App.Linux.Services;
 using Files.App.Linux.ViewModels;
@@ -98,11 +99,53 @@ public partial class MainWindow : Window
 		}
 	}
 
-	private void UpdateSidebarColumn()
+	/// <summary>Animated width of the sidebar column (the Windows sidebar slides open and closed in 350 ms).</summary>
+	public static readonly StyledProperty<double> SidebarPaneWidthProperty =
+		AvaloniaProperty.Register<MainWindow, double>(nameof(SidebarPaneWidth));
+
+	public double SidebarPaneWidth
+	{
+		get => GetValue(SidebarPaneWidthProperty);
+		set => SetValue(SidebarPaneWidthProperty, value);
+	}
+
+	private bool _sidebarInitialized;
+
+	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+	{
+		base.OnPropertyChanged(change);
+		if (change.Property == SidebarPaneWidthProperty && ContentGrid is not null)
+			ContentGrid.ColumnDefinitions[0].Width = new GridLength(Math.Max(0, SidebarPaneWidth));
+	}
+
+	private async void UpdateSidebarColumn()
 	{
 		if (_vm is null)
 			return;
-		ContentGrid.ColumnDefinitions[0].Width = _vm.IsSidebarOpen ? new GridLength(Math.Max(160, SettingsService.Current.SidebarWidth)) : new GridLength(0);
+		var open = _vm.IsSidebarOpen;
+		var target = open ? Math.Max(160, SettingsService.Current.SidebarWidth) : 0;
+		var current = ContentGrid.ColumnDefinitions[0].ActualWidth;
+		if (!_sidebarInitialized || !Motion.IsEnabled || !IsVisible)
+		{
+			_sidebarInitialized = true;
+			SidebarPaneWidth = target;
+			SidebarList.IsVisible = open;
+			SidebarSplitter.IsVisible = open;
+			return;
+		}
+
+		// Keep the sidebar visible while it slides closed, then hide it.
+		SidebarList.IsVisible = true;
+		SidebarSplitter.IsVisible = false;
+		if (open)
+			_ = Motion.SlideInAsync(SidebarList, -24);
+		await Motion.AnimateDoubleAsync(this, SidebarPaneWidthProperty, current, target, Motion.Pane, Motion.Decelerate);
+		SidebarPaneWidth = target;
+		if (_vm.IsSidebarOpen == open)
+		{
+			SidebarList.IsVisible = open;
+			SidebarSplitter.IsVisible = open;
+		}
 	}
 
 	private void SaveWindowState()

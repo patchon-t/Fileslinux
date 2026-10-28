@@ -208,7 +208,7 @@
 			<Panel x:Name="LayoutHost" Background="Transparent">
 
 				<!--  Home  -->
-				<v:HomeView DataContext="{Binding}" IsVisible="{Binding IsHome}" />
+				<v:HomeView x:Name="HomeHost" DataContext="{Binding}" IsVisible="{Binding IsHome}" />
 
 				<!--  Details layout  -->
 				<Grid x:Name="DetailsHost" RowDefinitions="Auto,*">

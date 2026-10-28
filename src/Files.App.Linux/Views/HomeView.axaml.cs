@@ -1,10 +1,12 @@
 // Copyright (c) Files Community
 // Licensed under the MIT License.
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Interactivity;
 using Files.App.Linux.Controls;
+using Files.App.Linux.Helpers;
 using Files.App.Linux.Models;
 using Files.App.Linux.Services;
 using Files.App.Linux.ViewModels;
@@ -27,6 +29,9 @@ public partial class HomeView : UserControl
 	}
 
 	private ShellTabViewModel? Tab => DataContext as ShellTabViewModel;
+
+	/// <summary>Widgets rise in one after another, like the Windows Home page.</summary>
+	public void PlayEntrance() => Motion.StaggeredEntrance(Sections.Children.OfType<Visual>(), maxAnimated: 6);
 
 	private void OnQuickAccessClick(object? sender, RoutedEventArgs e)
 	{

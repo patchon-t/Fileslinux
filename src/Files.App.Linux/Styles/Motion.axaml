@@ -1,0 +1,108 @@
+<!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
+<!--
+	Windows (WinUI / Fluent) motion for the Linux port. Loaded only while animations are enabled
+	in Settings (App.ApplyMotion), so turning animations off removes every style below.
+	Timings and curves match WinUI; see docs/linux-animations.md.
+	  Faster 83 ms  (ControlFasterAnimationDuration)  - hover/press color changes
+	  Fast   167 ms (ControlFastAnimationDuration)    - selection pill, tooltips, new tabs
+	  Normal 250 ms (ControlNormalAnimationDuration)  - menus, flyouts, progress
+	  Decelerate 0.1,0.9,0.2,1.0 / FastOutSlowIn 0,0,0,1
+-->
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<!--  Hover and press: background color fades in 83 ms, like every WinUI control  -->
+	<Style Selector="Button /template/ ContentPresenter#PART_ContentPresenter, ToggleButton /template/ ContentPresenter#PART_ContentPresenter, DropDownButton /template/ ContentPresenter#PART_ContentPresenter, ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Transitions">
+			<Transitions>
+				<BrushTransition Property="Background" Duration="0:0:0.083" />
+				<BrushTransition Property="BorderBrush" Duration="0:0:0.083" />
+			</Transitions>
+		</Setter>
+	</Style>
+	<Style Selector="MenuItem /template/ Border#PART_LayoutRoot">
+		<Setter Property="Transitions">
+			<Transitions>
+				<BrushTransition Property="Background" Duration="0:0:0.083" />
+			</Transitions>
+		</Setter>
+	</Style>
+
+	<!--  Tab close buttons fade in on hover  -->
+	<Style Selector="ListBox.tabs ListBoxItem Button.tabclose">
+		<Setter Property="Transitions">
+			<Transitions>
+				<DoubleTransition Property="Opacity" Duration="0:0:0.083" />
+			</Transitions>
+		</Setter>
+	</Style>
+
+	<!--  Sidebar selection pill stretches in (NavigationView selection indicator)  -->
+	<Style Selector="ListBoxItem:selected Border.pill">
+		<Style.Animations>
+			<Animation Easing="0,0,0,1" FillMode="Both" Duration="0:0:0.167">
+				<KeyFrame Cue="0%">
+					<Setter Property="ScaleTransform.ScaleY" Value="0" />
+				</KeyFrame>
+				<KeyFrame Cue="100%">
+					<Setter Property="ScaleTransform.ScaleY" Value="1" />
+				</KeyFrame>
+			</Animation>
+		</Style.Animations>
+	</Style>
+
+	<!--  New tabs fade and rise in (TabView)  -->
+	<Style Selector="ListBox.tabs ListBoxItem">
+		<Style.Animations>
+			<Animation Easing="0.1,0.9,0.2,1.0" FillMode="Both" Duration="0:0:0.25">
+				<KeyFrame Cue="0%">
+					<Setter Property="Opacity" Value="0" />
+					<Setter Property="TranslateTransform.Y" Value="8" />
+				</KeyFrame>
+				<KeyFrame Cue="100%">
+					<Setter Property="Opacity" Value="1" />
+					<Setter Property="TranslateTransform.Y" Value="0" />
+				</KeyFrame>
+			</Animation>
+		</Style.Animations>
+	</Style>
+
+	<!--  Menus and flyouts slide down and fade in (MenuFlyout / Flyout open)  -->
+	<Style Selector="MenuFlyoutPresenter, ContextMenu, FlyoutPresenter">
+		<Style.Animations>
+			<Animation Easing="0.1,0.9,0.2,1.0" FillMode="Both" Duration="0:0:0.25">
+				<KeyFrame Cue="0%">
+					<Setter Property="Opacity" Value="0" />
+					<Setter Property="TranslateTransform.Y" Value="-12" />
+				</KeyFrame>
+				<KeyFrame Cue="100%">
+					<Setter Property="Opacity" Value="1" />
+					<Setter Property="TranslateTransform.Y" Value="0" />
+				</KeyFrame>
+			</Animation>
+		</Style.Animations>
+	</Style>
+
+	<!--  Tooltips fade in  -->
+	<Style Selector="ToolTip">
+		<Style.Animations>
+			<Animation Easing="0,0,0,1" FillMode="Both" Duration="0:0:0.167">
+				<KeyFrame Cue="0%">
+					<Setter Property="Opacity" Value="0" />
+				</KeyFrame>
+				<KeyFrame Cue="100%">
+					<Setter Property="Opacity" Value="1" />
+				</KeyFrame>
+			</Animation>
+		</Style.Animations>
+	</Style>
+
+	<!--  Progress moves smoothly instead of jumping (status center, drive usage)  -->
+	<Style Selector="ProgressBar">
+		<Setter Property="Transitions">
+			<Transitions>
+				<DoubleTransition Easing="0,0,0,1" Property="Value" Duration="0:0:0.25" />
+			</Transitions>
+		</Setter>
+	</Style>
+
+</Styles>

@@ -47,7 +47,7 @@ msbuild -restore src\Files.App\Files.App.csproj /p:Configuration=Debug /p:Platfo
 
 ## When Working on the Linux Port
 
-The Linux port lives in `src/Files.App.Linux` and builds on Linux with the .NET 10 SDK. It is not part of `Files.slnx`; use `Files.Linux.slnx`. See [docs/linux.md](docs/linux.md).
+The Linux port lives in `src/Files.App.Linux` and builds on Linux with the .NET 10 SDK. It is not part of `Files.slnx`; use `Files.Linux.slnx`. See [docs/linux.md](docs/linux.md). For UI motion, follow [docs/linux-animations.md](docs/linux-animations.md): reuse the tokens in `Helpers/Motion.cs` and match the Windows app's timings.
 
 ```sh
 dotnet build Files.Linux.slnx

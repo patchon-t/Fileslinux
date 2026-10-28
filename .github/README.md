@@ -117,8 +117,8 @@ Get Files from the Microsoft Store, or use the classic installer. Buying Files o
   </tr>
   <tr>
     <td valign="top">
-      <h4>🎨 Light and dark</h4>
-      Follows your system theme, or pick one yourself. The Fluent design matches across Windows and Linux.
+      <h4>🎨 Light and dark, with Fluent motion</h4>
+      Follows your system theme, or pick one yourself. On Linux, the Windows 11 animations come along too: folders fade in, the sidebar slides, dialogs scale in. See the <a href="../docs/linux-animations.md">animations reference</a>.
     </td>
     <td valign="top">
       <h4>🌍 49 languages</h4>

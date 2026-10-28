@@ -74,6 +74,7 @@ public sealed class OverlayDialogService(MainWindow window) : IDialogService
 
 			Card.Child = root;
 			Layer.IsVisible = true;
+			_ = Motion.DialogInAsync(Card, Layer);
 
 			void OnKey(object? s, KeyEventArgs e)
 			{
@@ -96,6 +97,9 @@ public sealed class OverlayDialogService(MainWindow window) : IDialogService
 
 			var value = await tcs.Task;
 			_keyHandler = null;
+			Layer.IsHitTestVisible = false;
+			await Task.WhenAny(Motion.DialogOutAsync(Card, Layer), Task.Delay(Motion.Normal));
+			Layer.IsHitTestVisible = true;
 			Layer.IsVisible = false;
 			Card.Child = null;
 			previousFocus?.Focus();

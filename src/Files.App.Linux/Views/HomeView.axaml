@@ -26,7 +26,7 @@
 	</UserControl.Resources>
 
 	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
-		<StackPanel Margin="20,12,20,24" Spacing="8">
+		<StackPanel x:Name="Sections" Margin="20,12,20,24" Spacing="8">
 
 			<!--  Quick access  -->
 			<Expander

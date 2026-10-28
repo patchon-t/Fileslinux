@@ -46,6 +46,7 @@ public sealed class AppSettings
 	public bool ShowThumbnails { get; set; } = true;
 	public bool ShowDeleteConfirmation { get; set; } = true;
 	public bool ShowInfoPane { get; set; }
+	public bool EnableAnimations { get; set; } = true;
 	public bool IsSidebarOpen { get; set; } = true;
 	public double SidebarWidth { get; set; } = 240;
 	public double InfoPaneWidth { get; set; } = 300;

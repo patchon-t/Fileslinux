@@ -162,9 +162,6 @@
 							<ic:SymbolIcon FontSize="16" Symbol="ArrowSort" />
 							<TextBlock VerticalAlignment="Center" Text="{v:Loc Sort, Sort}" />
 						</StackPanel>
-						<DropDownButton.Flyout>
-							<MenuFlyout Placement="BottomEdgeAlignedRight" />
-						</DropDownButton.Flyout>
 					</DropDownButton>
 					<DropDownButton
 						x:Name="LayoutButton"
@@ -174,9 +171,6 @@
 							<ic:SymbolIcon FontSize="16" Symbol="Grid" />
 							<TextBlock VerticalAlignment="Center" Text="{v:Loc Layout, Layout}" />
 						</StackPanel>
-						<DropDownButton.Flyout>
-							<MenuFlyout Placement="BottomEdgeAlignedRight" />
-						</DropDownButton.Flyout>
 					</DropDownButton>
 					<ToggleButton
 						Classes="subtle toolbar"
@@ -192,9 +186,6 @@
 						Classes="subtle toolbar"
 						ToolTip.Tip="{v:Loc SeeMore, See more}">
 						<ic:SymbolIcon FontSize="16" Symbol="MoreHorizontal" />
-						<DropDownButton.Flyout>
-							<MenuFlyout Placement="BottomEdgeAlignedRight" />
-						</DropDownButton.Flyout>
 					</DropDownButton>
 				</StackPanel>
 			</Grid>

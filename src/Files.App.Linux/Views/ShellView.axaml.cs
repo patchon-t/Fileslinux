@@ -53,12 +53,11 @@ public partial class ShellView : UserControl
 
 		DetailsList.AddHandler(ScrollViewer.ScrollChangedEvent, (_, _) => SyncHeaderScroll());
 		DetailsColumns.Changed += (_, _) => BuildHeader();
-		var sortFlyout = (MenuFlyout)SortButton.Flyout!;
-		var layoutFlyout = (MenuFlyout)LayoutButton.Flyout!;
-		var moreFlyout = (MenuFlyout)MoreButton.Flyout!;
-		sortFlyout.Opening += (_, _) => BuildSortMenu(sortFlyout.Items);
-		layoutFlyout.Opening += (_, _) => BuildLayoutMenu(layoutFlyout.Items);
-		moreFlyout.Opening += (_, _) => BuildMoreMenu(moreFlyout.Items);
+		// These menus depend on the current state, so a fresh menu is built on every click.
+		// (Filling a MenuFlyout from its Opening event leaves it empty on screen.)
+		SortButton.Click += (_, _) => ShowMenu(SortButton, BuildSortMenu);
+		LayoutButton.Click += (_, _) => ShowMenu(LayoutButton, BuildLayoutMenu);
+		MoreButton.Click += (_, _) => ShowMenu(MoreButton, BuildMoreMenu);
 		InfoSplitter.DragCompleted += (_, _) =>
 		{
 			SettingsService.Current.InfoPaneWidth = InfoPane.Bounds.Width;
@@ -464,6 +463,17 @@ public partial class ShellView : UserControl
 	}
 
 	// ---------------- Menus ----------------
+
+	/// <summary>The menu most recently opened from the toolbar (used by tests).</summary>
+	internal MenuFlyout? LastToolbarMenu { get; private set; }
+
+	private void ShowMenu(Control anchor, Action<ItemCollection> build)
+	{
+		var menu = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedRight };
+		build(menu.Items);
+		LastToolbarMenu = menu;
+		menu.ShowAt(anchor);
+	}
 
 	private void BuildSortMenu(ItemCollection items)
 	{

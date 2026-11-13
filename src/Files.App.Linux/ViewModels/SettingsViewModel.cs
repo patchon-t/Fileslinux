@@ -70,6 +70,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 		ShowDeleteConfirmation = _s.ShowDeleteConfirmation;
 		FoldersFirst = _s.FoldersFirst;
 		EnableAnimations = _s.EnableAnimations;
+		UseSystemTitleBar = _s.UseSystemTitleBar;
 		TerminalCommand = _s.TerminalCommand ?? string.Empty;
 	}
 
@@ -119,6 +120,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 	public partial bool EnableAnimations { get; set; }
 
 	[ObservableProperty]
+	public partial bool UseSystemTitleBar { get; set; }
+
+	[ObservableProperty]
 	public partial string TerminalCommand { get; set; }
 
 	[ObservableProperty]
@@ -166,6 +170,8 @@ public sealed partial class SettingsViewModel : ObservableObject
 		App.ApplyMotion(value);
 		SettingsService.Save();
 	}
+
+	partial void OnUseSystemTitleBarChanged(bool value) => Update(() => _s.UseSystemTitleBar = value);
 
 	partial void OnFoldersFirstChanged(bool value) => Update(() => _s.FoldersFirst = value);
 

@@ -159,6 +159,18 @@ public static class Motion
 		return RunAsync(target, animation);
 	}
 
+	/// <summary>One clockwise turn, used by the refresh button (500 ms, fast-out-slow-in).</summary>
+	public static Task SpinAsync(Visual target)
+	{
+		if (!IsEnabled)
+			return Task.CompletedTask;
+		var animation = Build(TimeSpan.FromMilliseconds(500), FastOutSlowIn, TimeSpan.Zero,
+			(0, [(RotateTransform.AngleProperty, 0d)]),
+			(1, [(RotateTransform.AngleProperty, 360d)]));
+		animation.FillMode = FillMode.None;
+		return RunAsync(target, animation);
+	}
+
 	/// <summary>Animates any double-valued property (used for the sidebar width).</summary>
 	public static Task AnimateDoubleAsync(Animatable target, AvaloniaProperty<double> property, double from, double to, TimeSpan duration, Easing easing)
 	{

@@ -36,6 +36,7 @@
 					<SolidColorBrush x:Key="App.Theme.DialogFooterBrush" Color="#F3F3F3" />
 					<SolidColorBrush x:Key="App.Theme.ProgressTrackBrush" Color="#E0E0E0" />
 					<SolidColorBrush x:Key="App.Theme.CriticalBrush" Color="#C42B1C" />
+					<SolidColorBrush x:Key="App.Theme.OutlineBrush" Color="#33000000" />
 				</ResourceDictionary>
 				<ResourceDictionary x:Key="Dark">
 					<SolidColorBrush x:Key="App.Theme.WindowBrush" Color="#1C1C1C" />
@@ -63,6 +64,7 @@
 					<SolidColorBrush x:Key="App.Theme.DialogFooterBrush" Color="#202020" />
 					<SolidColorBrush x:Key="App.Theme.ProgressTrackBrush" Color="#454545" />
 					<SolidColorBrush x:Key="App.Theme.CriticalBrush" Color="#FF99A4" />
+					<SolidColorBrush x:Key="App.Theme.OutlineBrush" Color="#40FFFFFF" />
 				</ResourceDictionary>
 			</ResourceDictionary.ThemeDictionaries>
 		</ResourceDictionary>

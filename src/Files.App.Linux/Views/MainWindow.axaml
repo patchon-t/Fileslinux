@@ -24,7 +24,12 @@
 				x:Name="TabBar"
 				Height="40"
 				Background="{DynamicResource App.Theme.WindowBrush}"
-				ColumnDefinitions="Auto,Auto,*">
+				ColumnDefinitions="Auto,Auto,*,Auto">
+				<!--  Empty title-bar space: drag to move the window, double-click to maximize (custom title bar only)  -->
+				<Border
+					x:Name="DragArea"
+					Grid.ColumnSpan="4"
+					Background="Transparent" />
 				<ScrollViewer
 					x:Name="TabScroller"
 					HorizontalScrollBarVisibility="Hidden"
@@ -103,6 +108,35 @@
 					ToolTip.Tip="{v:Loc NewTab, New tab}">
 					<ic:SymbolIcon FontSize="16" Symbol="Add" />
 				</Button>
+
+				<!--  Caption buttons, like the Windows title bar (custom title bar only)  -->
+				<StackPanel
+					x:Name="CaptionButtons"
+					Grid.Column="3"
+					VerticalAlignment="Top"
+					Orientation="Horizontal">
+					<Button
+						x:Name="MinimizeButton"
+						Classes="caption"
+						ToolTip.Tip="{v:Loc Minimize, Minimize}">
+						<ic:SymbolIcon FontSize="14" Symbol="Subtract" />
+					</Button>
+					<Button
+						x:Name="MaximizeButton"
+						Classes="caption"
+						ToolTip.Tip="{v:Loc Maximize, Maximize}">
+						<ic:SymbolIcon
+							x:Name="MaximizeIcon"
+							FontSize="14"
+							Symbol="Maximize" />
+					</Button>
+					<Button
+						x:Name="CloseButton"
+						Classes="caption close"
+						ToolTip.Tip="{v:Loc Close, Close}">
+						<ic:SymbolIcon FontSize="14" Symbol="Dismiss" />
+					</Button>
+				</StackPanel>
 			</Grid>
 
 			<!--  Address bar (navigation toolbar)  -->
@@ -143,10 +177,15 @@
 						<ic:SymbolIcon FontSize="16" Symbol="ArrowUp" />
 					</Button>
 					<Button
+						x:Name="RefreshButton"
 						Classes="subtle nav"
 						Command="{Binding SelectedTab.RefreshCommand, FallbackValue={x:Null}}"
 						ToolTip.Tip="{v:Loc Refresh, Refresh}">
-						<ic:SymbolIcon FontSize="16" Symbol="ArrowClockwise" />
+						<ic:SymbolIcon
+							x:Name="RefreshIcon"
+							FontSize="16"
+							RenderTransformOrigin="50%,50%"
+							Symbol="ArrowClockwise" />
 					</Button>
 				</StackPanel>
 
@@ -389,6 +428,23 @@
 				BoxShadow="0 8 32 0 #40000000"
 				ClipToBounds="True"
 				CornerRadius="8" />
+		</Panel>
+
+		<!--  Window outline and resize edges (custom title bar only)  -->
+		<Border
+			x:Name="WindowOutline"
+			BorderBrush="{DynamicResource App.Theme.OutlineBrush}"
+			BorderThickness="1"
+			IsHitTestVisible="False" />
+		<Panel x:Name="ResizeGrips">
+			<Border Height="5" VerticalAlignment="Top" Background="Transparent" Cursor="TopSide" Tag="North" />
+			<Border Height="5" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomSide" Tag="South" />
+			<Border Width="5" HorizontalAlignment="Left" Background="Transparent" Cursor="LeftSide" Tag="West" />
+			<Border Width="5" HorizontalAlignment="Right" Background="Transparent" Cursor="RightSide" Tag="East" />
+			<Border Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" Cursor="TopLeftCorner" Tag="NorthWest" />
+			<Border Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Background="Transparent" Cursor="TopRightCorner" Tag="NorthEast" />
+			<Border Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomLeftCorner" Tag="SouthWest" />
+			<Border Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomRightCorner" Tag="SouthEast" />
 		</Panel>
 	</Panel>
 </Window>

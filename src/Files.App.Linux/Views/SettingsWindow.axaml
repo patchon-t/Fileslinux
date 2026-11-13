@@ -162,6 +162,23 @@
 						</Border>
 						<Border Classes="setting">
 							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="Window" />
+								<StackPanel Grid.Column="1" VerticalAlignment="Center">
+									<TextBlock Text="{v:Loc UseSystemTitleBar, Use the system title bar}" />
+									<TextBlock
+										Classes="secondary"
+										FontSize="12"
+										Text="{v:Loc UseSystemTitleBarDescription, Off: tabs share the title bar like Files on Windows}" />
+								</StackPanel>
+								<ToggleSwitch
+									Grid.Column="2"
+									IsChecked="{Binding UseSystemTitleBar}"
+									OffContent=""
+									OnContent="" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
 								<ic:SymbolIcon Symbol="Sparkle" />
 								<StackPanel Grid.Column="1" VerticalAlignment="Center">
 									<TextBlock Text="{v:Loc Animations, Animations}" />

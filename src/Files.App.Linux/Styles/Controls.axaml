@@ -40,6 +40,34 @@
 		<Setter Property="Background" Value="{DynamicResource App.Theme.SelectedItemBrush}" />
 	</Style>
 
+	<!--  Title bar caption buttons (minimize / maximize / close), sized like Windows  -->
+	<Style Selector="Button.caption">
+		<Setter Property="Width" Value="46" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TextPrimaryBrush}" />
+	</Style>
+	<Style Selector="Button.caption:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtleHoverBrush}" />
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TextPrimaryBrush}" />
+	</Style>
+	<Style Selector="Button.caption:pressed /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SubtlePressedBrush}" />
+	</Style>
+	<Style Selector="Button.caption.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="#C42B1C" />
+		<Setter Property="Foreground" Value="White" />
+	</Style>
+	<Style Selector="Button.caption.close:pressed /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="#C83C30" />
+		<Setter Property="Foreground" Value="White" />
+	</Style>
+
 	<!--  Navigation buttons (back / forward / up / refresh)  -->
 	<Style Selector="Button.nav, ToggleButton.nav">
 		<Setter Property="Width" Value="36" />

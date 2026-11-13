@@ -25,7 +25,7 @@ public static class MenuBuilder
 		if (icon is { } s)
 			item.Icon = new SymbolIcon { Symbol = s, FontSize = 16, Foreground = iconBrush ?? item.Foreground, IconVariant = iconBrush is null ? IconVariant.Regular : IconVariant.Filled };
 		if (gesture is not null)
-			item.InputGesture = KeyGesture.Parse(gesture);
+			item.InputGesture = Gesture(gesture);
 		return item;
 	}
 
@@ -45,7 +45,7 @@ public static class MenuBuilder
 			IsChecked = isChecked,
 		};
 		if (gesture is not null)
-			item.InputGesture = KeyGesture.Parse(gesture);
+			item.InputGesture = Gesture(gesture);
 		item.Click += (_, _) => action();
 		return item;
 	}
@@ -61,7 +61,7 @@ public static class MenuBuilder
 		if (icon is { } s)
 			item.Icon = new SymbolIcon { Symbol = s, FontSize = 16 };
 		if (gesture is not null)
-			item.InputGesture = KeyGesture.Parse(gesture);
+			item.InputGesture = Gesture(gesture);
 		item.Click += (_, _) => action();
 		return item;
 	}
@@ -77,6 +77,19 @@ public static class MenuBuilder
 	}
 
 	public static Separator Separator() => new();
+
+	/// <summary>
+	/// Parses a shortcut such as "Ctrl+Shift+1". A bare digit must become D1..D9:
+	/// KeyGesture.Parse reads "1" as the key code 1 (Cancel) otherwise.
+	/// </summary>
+	public static KeyGesture Gesture(string text)
+	{
+		var plus = text.LastIndexOf('+');
+		var key = text[(plus + 1)..];
+		if (key.Length == 1 && char.IsAsciiDigit(key[0]))
+			text = text[..(plus + 1)] + "D" + key;
+		return KeyGesture.Parse(text);
+	}
 
 	/// <summary>Removes leading/trailing/double separators.</summary>
 	public static void Tidy(System.Collections.IList items)

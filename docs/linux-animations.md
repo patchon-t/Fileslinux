@@ -43,6 +43,7 @@ The decelerate curve is front-loaded: most of the movement happens in the first 
 | **Menus and flyouts** | `MenuFlyout` / `Flyout` open (slide + fade) | `Motion.axaml`: `MenuFlyoutPresenter`, `ContextMenu` and `FlyoutPresenter` fade in and slide down 12 px | 250 ms, decelerate | — |
 | **Tooltips** | Tooltip fade | `Motion.axaml`: fade in | 167 ms, fast-out-slow-in | — |
 | **Progress** | Status center progress bars | `Motion.axaml`: `DoubleTransition` on `ProgressBar.Value` so progress glides instead of jumping | 250 ms, fast-out-slow-in | — |
+| **Refresh** | Refresh button | `MainWindow.SpinRefreshIcon` → `Motion.SpinAsync`: the arrow turns once on click or F5, and keeps turning while the folder is still loading | 500 ms per turn, fast-out-slow-in | — |
 | **Thumbnails** | Thumbnails fade in when loaded | `ItemIcon`: the thumbnail fades in over the placeholder icon | 167 ms, fast-out-slow-in | — |
 | **Settings pages** | Settings dialog page navigation (entrance) | `SettingsWindow`: the selected page rises 16 px and fades in | 300 ms, decelerate | — |
 

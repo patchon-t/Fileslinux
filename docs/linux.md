@@ -43,7 +43,7 @@ Set `FILES_SCREENSHOT_DIR=/some/folder` when running the tests to save screensho
 
 | Area | What works |
 | --- | --- |
-| Window | Tabs (new, close, duplicate, reopen closed, close others/to the right, middle-click to open in a new tab), multiple windows, session restore |
+| Window | Tabs in the title bar with Windows-style minimize/maximize/close buttons (drag the empty area to move, double-click to maximize; Settings → Appearance → *Use the system title bar* switches back to the desktop's title bar), tabs (new, close, duplicate, reopen closed, close others/to the right, middle-click to open in a new tab), multiple windows, session restore |
 | Navigation | Back/forward (with history menus), up, refresh, breadcrumb bar with sub-folder menus, editable path bar with Tab completion (`~` supported), mouse back/forward buttons |
 | Sidebar | Home, pinned folders (pin/unpin/reorder), Trash, drives with free space (auto-updates when USB drives are plugged in), eject removable drives, collapsible sections, drag and drop onto items |
 | Home page | Quick access, drives with usage bars, recent files (shared with GTK apps) |

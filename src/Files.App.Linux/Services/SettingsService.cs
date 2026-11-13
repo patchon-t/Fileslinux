@@ -47,6 +47,8 @@ public sealed class AppSettings
 	public bool ShowDeleteConfirmation { get; set; } = true;
 	public bool ShowInfoPane { get; set; }
 	public bool EnableAnimations { get; set; } = true;
+	/// <summary>False (default): tabs sit in the title bar with our own caption buttons, like Windows. True: use the desktop's title bar.</summary>
+	public bool UseSystemTitleBar { get; set; }
 	public bool IsSidebarOpen { get; set; } = true;
 	public double SidebarWidth { get; set; } = 240;
 	public double InfoPaneWidth { get; set; } = 300;

@@ -65,7 +65,101 @@ public partial class MainWindow : Window
 			Shell.FocusActiveList();
 		};
 		Closing += (_, _) => SaveWindowState();
-		Closed += (_, _) => _vm?.Detach();
+		Closed += (_, _) =>
+		{
+			_vm?.Detach();
+			SettingsService.Changed -= OnSettingsChanged;
+		};
+
+		// Title bar: tabs live in the title bar with our own caption buttons, like Files on Windows.
+		MinimizeButton.Click += (_, _) => WindowState = WindowState.Minimized;
+		MaximizeButton.Click += (_, _) => ToggleMaximize();
+		CloseButton.Click += (_, _) => Close();
+		DragArea.PointerPressed += OnDragAreaPointerPressed;
+		foreach (var grip in ResizeGrips.Children.OfType<Border>())
+			grip.PointerPressed += OnResizeGripPressed;
+		SettingsService.Changed += OnSettingsChanged;
+		ApplyTitleBar();
+
+		// The refresh icon spins when you refresh, and keeps spinning while the folder loads.
+		RefreshButton.Click += (_, _) => SpinRefreshIcon();
+	}
+
+	private void OnSettingsChanged(object? sender, EventArgs e) => ApplyTitleBar();
+
+	/// <summary>True when the app draws its own title bar (tabs + caption buttons) instead of the desktop's.</summary>
+	public bool UsesCustomTitleBar => !SettingsService.Current.UseSystemTitleBar;
+
+	private void ApplyTitleBar()
+	{
+		var custom = UsesCustomTitleBar;
+		SystemDecorations = custom ? SystemDecorations.None : SystemDecorations.Full;
+		CaptionButtons.IsVisible = custom;
+		DragArea.IsHitTestVisible = custom;
+		UpdateWindowFrame();
+	}
+
+	private void UpdateWindowFrame()
+	{
+		var custom = UsesCustomTitleBar;
+		var normal = WindowState == WindowState.Normal;
+		ResizeGrips.IsVisible = custom && normal;
+		WindowOutline.IsVisible = custom && normal;
+		MaximizeIcon.Symbol = WindowState == WindowState.Maximized ? FluentIcons.Common.Symbol.SquareMultiple : FluentIcons.Common.Symbol.Maximize;
+		ToolTip.SetTip(MaximizeButton, WindowState == WindowState.Maximized ? Loc.Get("Restore", "Restore") : Loc.Get("Maximize", "Maximize"));
+	}
+
+	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+	{
+		base.OnPropertyChanged(change);
+		if (change.Property == WindowStateProperty && MaximizeIcon is not null)
+			UpdateWindowFrame();
+		else if (change.Property == SidebarPaneWidthProperty && ContentGrid is not null)
+			ContentGrid.ColumnDefinitions[0].Width = new GridLength(Math.Max(0, SidebarPaneWidth));
+	}
+
+	private void ToggleMaximize() => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+	private void OnDragAreaPointerPressed(object? sender, PointerPressedEventArgs e)
+	{
+		if (!UsesCustomTitleBar || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+			return;
+		if (e.ClickCount == 2)
+			ToggleMaximize();
+		else
+			BeginMoveDrag(e);
+		e.Handled = true;
+	}
+
+	private void OnResizeGripPressed(object? sender, PointerPressedEventArgs e)
+	{
+		if (sender is Border { Tag: string tag } && Enum.TryParse<WindowEdge>(tag, out var edge) && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+		{
+			BeginResizeDrag(edge, e);
+			e.Handled = true;
+		}
+	}
+
+	private bool _spinning;
+
+	/// <summary>One full turn of the refresh arrow (and more turns while the folder is still loading).</summary>
+	public async void SpinRefreshIcon()
+	{
+		if (_spinning || !Motion.IsEnabled)
+			return;
+		_spinning = true;
+		try
+		{
+			do
+			{
+				await Motion.SpinAsync(RefreshIcon);
+			}
+			while (_vm?.SelectedTab?.IsLoading == true && IsVisible);
+		}
+		finally
+		{
+			_spinning = false;
+		}
 	}
 
 	protected override void OnDataContextChanged(EventArgs e)
@@ -111,12 +205,6 @@ public partial class MainWindow : Window
 
 	private bool _sidebarInitialized;
 
-	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-	{
-		base.OnPropertyChanged(change);
-		if (change.Property == SidebarPaneWidthProperty && ContentGrid is not null)
-			ContentGrid.ColumnDefinitions[0].Width = new GridLength(Math.Max(0, SidebarPaneWidth));
-	}
 
 	private async void UpdateSidebarColumn()
 	{
@@ -564,6 +652,7 @@ public partial class MainWindow : Window
 			case Key.F5:
 			case Key.R when ctrl:
 				tab?.RefreshCommand.Execute(null);
+				SpinRefreshIcon();
 				break;
 			case Key.H when ctrl:
 				_vm.ToggleHiddenItemsCommand.Execute(null);

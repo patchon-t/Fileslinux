@@ -1,5 +1,8 @@
 <!--  Copyright (c) Files Community. Licensed under the MIT License.  -->
-<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:ic="using:FluentIcons.Avalonia">
 
 	<Style Selector="Window">
 		<Setter Property="FontSize" Value="14" />
@@ -68,6 +71,20 @@
 		<Setter Property="Foreground" Value="White" />
 	</Style>
 
+	<!--  Chevrons: collapsed sidebar sections point right; a breadcrumb chevron points down while its menu is open  -->
+	<Style Selector="ic|SymbolIcon.sectionchevron">
+		<Setter Property="RenderTransform" Value="rotate(0deg)" />
+	</Style>
+	<Style Selector="ic|SymbolIcon.sectionchevron.collapsed">
+		<Setter Property="RenderTransform" Value="rotate(-90deg)" />
+	</Style>
+	<Style Selector="Button.crumbchevron ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="rotate(0deg)" />
+	</Style>
+	<Style Selector="Button.crumbchevron.open ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="rotate(90deg)" />
+	</Style>
+
 	<!--  Navigation buttons (back / forward / up / refresh)  -->
 	<Style Selector="Button.nav, ToggleButton.nav">
 		<Setter Property="Width" Value="36" />
@@ -132,6 +149,13 @@
 	</Style>
 	<Style Selector="ListBox.subtle ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
 		<Setter Property="Foreground" Value="{DynamicResource App.Theme.TextPrimaryBrush}" />
+	</Style>
+
+	<!--  Folder (or sidebar item) under the pointer while dragging files onto it  -->
+	<Style Selector="ListBox.subtle ListBoxItem.droptarget /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{DynamicResource App.Theme.SelectedItemHoverBrush}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource App.Theme.AccentBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
 	</Style>
 
 	<!--  File layout items  -->

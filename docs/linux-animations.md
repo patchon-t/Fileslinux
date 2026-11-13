@@ -44,12 +44,15 @@ The decelerate curve is front-loaded: most of the movement happens in the first 
 | **Tooltips** | Tooltip fade | `Motion.axaml`: fade in | 167 ms, fast-out-slow-in | — |
 | **Progress** | Status center progress bars | `Motion.axaml`: `DoubleTransition` on `ProgressBar.Value` so progress glides instead of jumping | 250 ms, fast-out-slow-in | — |
 | **Refresh** | Refresh button | `MainWindow.SpinRefreshIcon` → `Motion.SpinAsync`: the arrow turns once on click or F5, and keeps turning while the folder is still loading | 500 ms per turn, fast-out-slow-in | — |
+| **Animated icons** | WinUI `AnimatedIcon`: `AnimatedBackVisualSource`, `AnimatedGlobalNavigationButtonVisualSource`, `AnimatedSettingsVisualSource`, expand/collapse chevrons | `Motion.axaml`: back/forward/up arrows nudge the way they point on hover (1 px) and press (4 px); the sidebar button squeezes on press; the settings gear turns 60° on hover and 120° on press; sidebar section chevrons rotate between down and right; a breadcrumb chevron turns down while its menu is open; drop-down chevrons bounce down on press | 250 ms decelerate (drop-down chevron 167 ms) | — |
+| **Drag-select box** | ListView rectangle selection | `ShellView` marquee: the accent box follows the pointer, items it crosses are selected, and the list scrolls when you drag past the edge | follows the pointer | — |
+| **Drop target** | Drop target highlight and "Move to" caption | `ShellView.OnDragOver`: the folder under the pointer gets the accent outline and a "Move to … / Copy to …" label follows the pointer; sidebar items highlight too | instant | — |
 | **Thumbnails** | Thumbnails fade in when loaded | `ItemIcon`: the thumbnail fades in over the placeholder icon | 167 ms, fast-out-slow-in | — |
 | **Settings pages** | Settings dialog page navigation (entrance) | `SettingsWindow`: the selected page rises 16 px and fades in | 300 ms, decelerate | — |
 
 ### Not reproduced
 
-The Windows app suppresses page-navigation transitions between folders (`SuppressNavigationTransitionInfo`), so there is no slide between folders on either platform. These Windows animations are not in the Linux port yet: tab drag-reordering, `AnimatedIcon` icons (for example the animated chevrons and settings gear), the status center `RepositionThemeTransition`, and the Shelf pane.
+The Windows app suppresses page-navigation transitions between folders (`SuppressNavigationTransitionInfo`), so there is no slide between folders on either platform. These Windows animations are not in the Linux port yet: the status center `RepositionThemeTransition`, and the Shelf pane.
 
 ## Adding a new animation
 

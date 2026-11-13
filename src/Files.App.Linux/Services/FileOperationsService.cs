@@ -211,7 +211,8 @@ public static class FileOperationsService
 		bool move,
 		Func<string, Task<ConflictResolution>> onConflict,
 		IProgress<OperationProgress>? progress = null,
-		CancellationToken ct = default)
+		CancellationToken ct = default,
+		List<(string Source, string Target)>? log = null)
 	{
 		var created = new List<string>();
 		var state = new OperationProgress();
@@ -283,6 +284,7 @@ public static class FileOperationsService
 			}, ct).ConfigureAwait(false);
 
 			created.Add(target);
+			log?.Add((source, target));
 		}
 
 		return created;

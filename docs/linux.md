@@ -43,12 +43,12 @@ Set `FILES_SCREENSHOT_DIR=/some/folder` when running the tests to save screensho
 
 | Area | What works |
 | --- | --- |
-| Window | Tabs in the title bar with Windows-style minimize/maximize/close buttons (drag the empty area to move, double-click to maximize; Settings → Appearance → *Use the system title bar* switches back to the desktop's title bar), tabs (new, close, duplicate, reopen closed, close others/to the right, middle-click to open in a new tab), multiple windows, session restore |
+| Window | Drag tabs to reorder them, or drag a tab out of the tab bar to open it in its own window (it keeps its back/forward history). Tabs in the title bar with Windows-style minimize/maximize/close buttons (drag the empty area to move, double-click to maximize; Settings → Appearance → *Use the system title bar* switches back to the desktop's title bar), tabs (new, close, duplicate, reopen closed, close others/to the right, middle-click to open in a new tab), multiple windows, session restore |
 | Navigation | Back/forward (with history menus), up, refresh, breadcrumb bar with sub-folder menus, editable path bar with Tab completion (`~` supported), mouse back/forward buttons |
 | Sidebar | Home, pinned folders (pin/unpin/reorder), Trash, drives with free space (auto-updates when USB drives are plugged in), eject removable drives, collapsible sections, drag and drop onto items |
 | Home page | Quick access, drives with usage bars, recent files (shared with GTK apps) |
-| Layouts | Details (sortable, resizable columns), List, Grid (small/medium/large) with image thumbnails |
-| Files | Open, open with (installed apps from `.desktop` files), cut/copy/paste (also published to the system clipboard in the `x-special/gnome-copied-files` and `text/uri-list` formats other file managers use), rename, new folder/file, delete to trash or permanently, drag and drop (move within a drive, copy across drives, Ctrl to copy), compress to ZIP, extract ZIP/TAR/TAR.GZ, copy path, open in terminal |
+| Layouts | Details (sortable, resizable columns), List, Grid (small/medium/large) with image thumbnails. **Each folder remembers its own layout and sort**: a folder opens with the default from Settings until you change it there, and the change applies to that folder only (Layout menu → *Use the default view for this folder* undoes it; Settings → *Reset folder views* resets all). Ctrl + mouse wheel changes the item size |
+| Files | Open, open with (installed apps from `.desktop` files), cut/copy/paste (also published to the system clipboard in the `x-special/gnome-copied-files` and `text/uri-list` formats other file managers use), rename, new folder/file, delete to trash or permanently, drag and drop (move within a drive, copy across drives, Ctrl to copy; the target folder is highlighted with a "Move to …" label), drag-select box (press on empty space and drag), undo/redo for rename, new, copy, move and delete to trash, compress to ZIP, extract ZIP/TAR/TAR.GZ, copy path, open in terminal |
 | Trash | freedesktop.org Trash spec (same trash as GNOME/KDE/XFCE, including trash folders on other drives), restore, restore all, empty |
 | Search | Recursive search from the current folder, with `*`/`?` wildcards |
 | Details pane | Preview of images and text files, file details |
@@ -66,10 +66,13 @@ Set `FILES_SCREENSHOT_DIR=/some/folder` when running the tests to save screensho
 | Ctrl+N | New window |
 | Alt+Left / Alt+Right / Alt+Up / Backspace | Back / forward / up / back |
 | Ctrl+L, Alt+D, F4 | Edit the path |
-| Ctrl+F, F3 | Search |
+| Ctrl+F, Ctrl+E, F3 | Search |
 | F5, Ctrl+R | Refresh |
 | Enter / Ctrl+Enter / Alt+Enter | Open / open in new tab / properties |
 | Ctrl+C / Ctrl+X / Ctrl+V | Copy / cut / paste |
+| Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) | Undo / redo |
+| Ctrl+D | Move to trash |
+| Ctrl + mouse wheel | Bigger / smaller items |
 | Ctrl+Shift+C | Copy path |
 | F2 | Rename |
 | Delete / Shift+Delete | Move to trash / delete permanently |

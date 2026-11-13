@@ -59,6 +59,8 @@ public sealed class AppSettings
 	public StartupBehavior Startup { get; set; } = StartupBehavior.OpenHome;
 	public List<string> LastSessionTabs { get; set; } = [];
 	public List<string>? PinnedFolders { get; set; }
+	/// <summary>Per-folder layout and sort (see FolderViewService).</summary>
+	public Dictionary<string, FolderViewSettings> FolderViews { get; set; } = new(StringComparer.Ordinal);
 	public string? TerminalCommand { get; set; }
 	public double WindowWidth { get; set; } = 1200;
 	public double WindowHeight { get; set; } = 760;
@@ -67,6 +69,7 @@ public sealed class AppSettings
 
 [JsonSourceGenerationOptions(WriteIndented = true, UseStringEnumConverter = true)]
 [JsonSerializable(typeof(AppSettings))]
+[JsonSerializable(typeof(Dictionary<string, FolderViewSettings>))]
 internal sealed partial class SettingsJsonContext : JsonSerializerContext;
 
 /// <summary>Loads and saves settings to $XDG_CONFIG_HOME/files/settings.json.</summary>

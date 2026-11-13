@@ -24,16 +24,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
 		IsSidebarOpen = SettingsService.Current.IsSidebarOpen;
 		IsInfoPaneOpen = SettingsService.Current.ShowInfoPane;
 		SettingsService.Changed += OnSettingsChanged;
+		FolderViewChanged += OnAnyFolderViewChanged;
 	}
 
 	private void OnSettingsChanged(object? sender, EventArgs e)
 	{
+		foreach (var tab in Tabs)
+			tab.ApplyFolderView();
 		Sidebar.Rebuild();
 		OnPinnedChanged();
 		RefreshAll();
 	}
 
-	public void Detach() => SettingsService.Changed -= OnSettingsChanged;
+	public void Detach()
+	{
+		SettingsService.Changed -= OnSettingsChanged;
+		FolderViewChanged -= OnAnyFolderViewChanged;
+	}
 
 	public IDialogService Dialogs { get; set; } = new NullDialogService();
 
@@ -121,6 +128,29 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
 	[RelayCommand]
 	private void NewTab() => OpenTab(null);
+
+	/// <summary>Moves a tab to a new position in the tab bar (drag to reorder).</summary>
+	public void MoveTab(ShellTabViewModel tab, int newIndex)
+	{
+		var oldIndex = Tabs.IndexOf(tab);
+		newIndex = Math.Clamp(newIndex, 0, Tabs.Count - 1);
+		if (oldIndex < 0 || oldIndex == newIndex)
+			return;
+		Tabs.Move(oldIndex, newIndex);
+		SelectedTab = tab;
+	}
+
+	/// <summary>Removes a tab that was dragged out into another window (it is not added to "reopen closed tab").</summary>
+	public void DetachTab(ShellTabViewModel tab)
+	{
+		var index = Tabs.IndexOf(tab);
+		if (index < 0 || Tabs.Count < 2)
+			return;
+		Tabs.Remove(tab);
+		tab.Dispose();
+		if (SelectedTab == tab || SelectedTab is null)
+			SelectedTab = Tabs[Math.Clamp(index, 0, Tabs.Count - 1)];
+	}
 
 	[RelayCommand]
 	public void CloseTab(ShellTabViewModel? tab)
@@ -227,17 +257,47 @@ public sealed partial class MainWindowViewModel : ObservableObject
 			_ = tab.LoadAsync(keepSelection: true);
 	}
 
+	/// <summary>Ctrl+Z: undo the last file operation, then refresh.</summary>
+	[RelayCommand]
+	public async Task UndoAsync() => await RunHistoryAsync(UndoService.UndoAsync, Loc.Get("Undo", "Undo"));
+
+	/// <summary>Ctrl+Y / Ctrl+Shift+Z: redo.</summary>
+	[RelayCommand]
+	public async Task RedoAsync() => await RunHistoryAsync(UndoService.RedoAsync, Loc.Get("Redo", "Redo"));
+
+	private async Task RunHistoryAsync(Func<Task<string?>> step, string title)
+	{
+		try
+		{
+			if (await step() is null)
+				return;
+		}
+		catch (Exception ex)
+		{
+			await Dialogs.ShowErrorAsync(title, ex.Message);
+		}
+		RefreshAll();
+		RefreshTrashState();
+	}
+
+	/// <summary>Re-sorts every tab (used when "folders first" changes).</summary>
 	public void OnSortChanged()
 	{
 		foreach (var tab in Tabs)
 			tab.Resort();
-		OnPropertyChanged(nameof(SortBy));
-		OnPropertyChanged(nameof(SortDescending));
 	}
 
-	public SortColumn SortBy => SettingsService.Current.SortBy;
+	/// <summary>The layout or sort of one folder changed: update every open tab showing it, in every window.</summary>
+	public void OnFolderViewChanged(string key) => FolderViewChanged?.Invoke(null, key);
 
-	public bool SortDescending => SettingsService.Current.SortDescending;
+	/// <summary>Raised for all windows so tabs on the same folder elsewhere follow along.</summary>
+	public static event EventHandler<string>? FolderViewChanged;
+
+	private void OnAnyFolderViewChanged(object? sender, string key)
+	{
+		foreach (var tab in Tabs)
+			tab.OnFolderViewChanged(key);
+	}
 
 	public void OnTabNavigated(ShellTabViewModel tab)
 	{
@@ -284,8 +344,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
 		var progress = new Progress<OperationProgress>(op.Report);
 		try
 		{
-			var created = await FileOperationsService.TransferAsync(sources, destination, move, path => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => Dialogs.ResolveConflictAsync(path)), progress, op.Cancellation.Token);
+			var log = new List<(string Source, string Target)>();
+			var created = await FileOperationsService.TransferAsync(sources, destination, move, path => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => Dialogs.ResolveConflictAsync(path)), progress, op.Cancellation.Token, log);
 			Operations.Complete(op);
+			if (log.Count > 0)
+				UndoService.Record(move ? UndoService.ForMove(log) : UndoService.ForCopy(log));
 			return created;
 		}
 		catch (OperationCanceledException)

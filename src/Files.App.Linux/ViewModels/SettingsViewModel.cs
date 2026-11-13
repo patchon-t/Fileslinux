@@ -186,6 +186,14 @@ public sealed partial class SettingsViewModel : ObservableObject
 			SettingsService.Save();
 	}
 
+	/// <summary>Every folder goes back to the default layout and sort.</summary>
+	[RelayCommand]
+	private void ResetFolderViews()
+	{
+		FolderViewService.ResetAll();
+		SettingsService.NotifyChanged();
+	}
+
 	[RelayCommand]
 	private void ResetPinned()
 	{

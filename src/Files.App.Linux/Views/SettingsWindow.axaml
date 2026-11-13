@@ -200,7 +200,7 @@
 								<TextBlock
 									Grid.Column="1"
 									VerticalAlignment="Center"
-									Text="{v:Loc DefaultLayout, Default layout}" />
+									Text="{v:Loc DefaultLayoutForNewFolders, Default layout (folders you have not changed)}" />
 								<ComboBox
 									Grid.Column="2"
 									ItemsSource="{Binding Layouts}"
@@ -280,6 +280,22 @@
 									IsChecked="{Binding FoldersFirst}"
 									OffContent=""
 									OnContent="" />
+							</Grid>
+						</Border>
+						<Border Classes="setting">
+							<Grid ColumnDefinitions="Auto,*,Auto">
+								<ic:SymbolIcon Symbol="ArrowReset" />
+								<StackPanel Grid.Column="1" VerticalAlignment="Center">
+									<TextBlock Text="{v:Loc ResetFolderViews, Reset folder views}" />
+									<TextBlock
+										Classes="secondary"
+										FontSize="12"
+										Text="{v:Loc ResetFolderViewsDescription, Each folder remembers its own layout and sort. This sets them all back to the default.}" />
+								</StackPanel>
+								<Button
+									Grid.Column="2"
+									Command="{Binding ResetFolderViewsCommand}"
+									Content="{v:Loc Reset, Reset}" />
 							</Grid>
 						</Border>
 					</StackPanel>

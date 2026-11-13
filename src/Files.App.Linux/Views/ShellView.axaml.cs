@@ -49,10 +49,26 @@ public partial class ShellView : UserControl
 			DragDrop.SetAllowDrop(list, true);
 			list.AddHandler(DragDrop.DragOverEvent, OnDragOver);
 			list.AddHandler(DragDrop.DropEvent, OnDrop);
+			list.AddHandler(DragDrop.DragLeaveEvent, (_, _) => ClearDropFeedback());
+			list.AddHandler(PointerWheelChangedEvent, OnListPointerWheel, RoutingStrategies.Tunnel);
+			list.AddHandler(PointerCaptureLostEvent, (_, _) => EndMarquee());
 		}
 
 		DetailsList.AddHandler(ScrollViewer.ScrollChangedEvent, (_, _) => SyncHeaderScroll());
 		DetailsColumns.Changed += (_, _) => BuildHeader();
+		// Tooltips show the keyboard shortcut, like the Windows toolbar ("Copy (Ctrl+C)").
+		foreach (var (button, key, fallback, shortcut) in new (Button, string, string, string)[]
+		{
+			(CutButton, "Cut", "Cut", "Ctrl+X"),
+			(CopyButton, "Copy", "Copy", "Ctrl+C"),
+			(PasteButton, "Paste", "Paste", "Ctrl+V"),
+			(RenameButton, "Rename", "Rename", "F2"),
+			(DeleteButton, "Delete", "Delete", "Delete"),
+		})
+		{
+			ToolTip.SetTip(button, $"{Loc.Get(key, fallback)} ({shortcut})");
+		}
+
 		// These menus depend on the current state, so a fresh menu is built on every click.
 		// (Filling a MenuFlyout from its Opening event leaves it empty on screen.)
 		SortButton.Click += (_, _) => ShowMenu(SortButton, BuildSortMenu);
@@ -115,7 +131,7 @@ public partial class ShellView : UserControl
 
 	private void OnTabPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
 	{
-		if (e.PropertyName is nameof(ShellTabViewModel.ShowLocationColumn) or nameof(ShellTabViewModel.IsSearchResults) or nameof(ShellTabViewModel.CurrentPath))
+		if (e.PropertyName is nameof(ShellTabViewModel.ShowLocationColumn) or nameof(ShellTabViewModel.IsSearchResults) or nameof(ShellTabViewModel.CurrentPath) or nameof(ShellTabViewModel.SortBy) or nameof(ShellTabViewModel.SortDescending))
 		{
 			DetailsColumns.SetShowLocation(_tab?.ShowLocationColumn == true);
 			BuildHeader();
@@ -307,11 +323,21 @@ public partial class ShellView : UserControl
 		}
 
 		var item = ItemFromSource(e.Source);
+		// In Details the rows are full width; the space right of the last column also starts a drag-select box.
+		var pastColumns = list == DetailsList && point.Position.X > DetailsColumns.TotalWidth + 16;
 		if (point.Properties.IsLeftButtonPressed)
 		{
-			_dragStart = item is not null ? point.Position : null;
-			if (item is null && e.KeyModifiers == KeyModifiers.None)
+			if (item is not null && !pastColumns)
+			{
+				_dragStart = point.Position;
+				return;
+			}
+			_dragStart = null;
+			if (e.KeyModifiers == KeyModifiers.None)
 				ApplySelection([]); // Click on empty space clears the selection.
+			BeginMarquee(list, e);
+			if (pastColumns)
+				e.Handled = true; // Don't let the row under the pointer get selected.
 		}
 		else if (point.Properties.IsMiddleButtonPressed && item is { IsDirectory: true })
 		{
@@ -329,12 +355,143 @@ public partial class ShellView : UserControl
 		}
 	}
 
-	private void OnListPointerReleased(object? sender, PointerReleasedEventArgs e) => _dragStart = null;
+	private void OnListPointerReleased(object? sender, PointerReleasedEventArgs e)
+	{
+		_dragStart = null;
+		if (_marqueeList is not null)
+		{
+			e.Pointer.Capture(null);
+			EndMarquee();
+		}
+	}
+
+	private void OnListPointerWheel(object? sender, PointerWheelEventArgs e)
+	{
+		// Ctrl + mouse wheel makes items bigger or smaller, like Windows.
+		if (_tab is null || !e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.Delta.Y == 0)
+			return;
+		_tab.StepLayout(e.Delta.Y > 0 ? 1 : -1);
+		e.Handled = true;
+	}
+
+	// ---------------- Drag-select box (rubber band) ----------------
+
+	private ListBox? _marqueeList;
+	private Point _marqueeStart;
+	private Point _marqueeLast;
+	private bool _marqueeActive;
+	private HashSet<FileItem> _marqueeBase = [];
+	private readonly Dictionary<FileItem, Rect> _marqueeSeen = [];
+	private DispatcherTimer? _marqueeScrollTimer;
+
+	private static Vector ScrollOffset(ListBox list) => list.Scroll is ScrollViewer sv ? sv.Offset : default;
+
+	/// <summary>Starts a possible drag-select box. It shows once the pointer moves a few pixels.</summary>
+	private void BeginMarquee(ListBox list, PointerPressedEventArgs e)
+	{
+		_marqueeList = list;
+		// Points are kept in content coordinates (including the scroll offset) so the box survives scrolling.
+		_marqueeStart = e.GetPosition(list) + ScrollOffset(list);
+		_marqueeLast = e.GetPosition(list);
+		_marqueeActive = false;
+		_marqueeSeen.Clear();
+		_marqueeBase = e.KeyModifiers.HasFlag(KeyModifiers.Control) && _tab is not null ? _tab.SelectedItems.ToHashSet() : [];
+		e.Pointer.Capture(list);
+	}
+
+	private void UpdateMarquee(PointerEventArgs e)
+	{
+		if (_marqueeList is not { } list || _tab is null)
+			return;
+		_marqueeLast = e.GetPosition(list);
+		var current = _marqueeLast + ScrollOffset(list);
+		if (!_marqueeActive)
+		{
+			var d = current - _marqueeStart;
+			if (Math.Abs(d.X) < 4 && Math.Abs(d.Y) < 4)
+				return;
+			_marqueeActive = true;
+			Marquee.IsVisible = true;
+		}
+
+		// Keep scrolling while the pointer is held above or below the list.
+		var outside = _marqueeLast.Y < 0 || _marqueeLast.Y > list.Bounds.Height;
+		if (outside && _marqueeScrollTimer is null)
+		{
+			_marqueeScrollTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(30), DispatcherPriority.Input, (_, _) => AutoScrollMarquee());
+			_marqueeScrollTimer.Start();
+		}
+		else if (!outside)
+		{
+			_marqueeScrollTimer?.Stop();
+			_marqueeScrollTimer = null;
+		}
+		RefreshMarquee();
+	}
+
+	private void AutoScrollMarquee()
+	{
+		if (_marqueeList?.Scroll is not ScrollViewer sv)
+			return;
+		var y = _marqueeLast.Y;
+		var h = _marqueeList.Bounds.Height;
+		var step = y < 0 ? Math.Max(-40, y) : y > h ? Math.Min(40, y - h) : 0;
+		if (step == 0)
+			return;
+		sv.Offset = new Vector(sv.Offset.X, Math.Clamp(sv.Offset.Y + step, 0, Math.Max(0, sv.Extent.Height - sv.Viewport.Height)));
+		RefreshMarquee();
+	}
+
+	private void RefreshMarquee()
+	{
+		if (_marqueeList is not { } list || _tab is null)
+			return;
+		var offset = ScrollOffset(list);
+		var current = _marqueeLast + offset;
+		var box = new Rect(_marqueeStart, current).Normalize();
+
+		// Draw the box in the overlay (view coordinates).
+		var topLeft = list.TranslatePoint(new Point(box.X - offset.X, box.Y - offset.Y), OverlayLayer) ?? default;
+		var visible = new Rect(topLeft, box.Size).Intersect(new Rect(OverlayLayer.Bounds.Size));
+		Canvas.SetLeft(Marquee, visible.X);
+		Canvas.SetTop(Marquee, visible.Y);
+		Marquee.Width = Math.Max(0, visible.Width);
+		Marquee.Height = Math.Max(0, visible.Height);
+
+		// Remember where each realized item is (content coordinates); items scrolled out keep their last position.
+		foreach (var container in list.GetRealizedContainers())
+		{
+			if (container.DataContext is FileItem item && container.TranslatePoint(default, list) is { } p)
+				_marqueeSeen[item] = new Rect(p + offset, container.Bounds.Size);
+		}
+		var hits = _marqueeSeen.Where(kv => kv.Value.Intersects(box)).Select(kv => kv.Key);
+		var selection = _marqueeBase.Count > 0 ? _marqueeBase.Union(hits).ToList() : hits.ToList();
+		var ordered = _tab.Items.Where(selection.Contains).ToList();
+		if (!ordered.SequenceEqual(_tab.SelectedItems))
+			ApplySelection(ordered);
+	}
+
+	private void EndMarquee()
+	{
+		_marqueeScrollTimer?.Stop();
+		_marqueeScrollTimer = null;
+		_marqueeList = null;
+		_marqueeActive = false;
+		Marquee.IsVisible = false;
+	}
+
+	/// <summary>True while a drag-select box is on screen (used by tests).</summary>
+	internal bool IsMarqueeActive => _marqueeActive;
 
 	// ---------------- Drag and drop ----------------
 
 	private async void OnListPointerMoved(object? sender, PointerEventArgs e)
 	{
+		if (_marqueeList is not null)
+		{
+			UpdateMarquee(e);
+			return;
+		}
 		if (_dragStart is not { } start || sender is not ListBox list || _tab is null || _tab.IsTrash)
 			return;
 		var point = e.GetCurrentPoint(list);
@@ -383,12 +540,56 @@ public partial class ShellView : UserControl
 	private void OnDragOver(object? sender, DragEventArgs e)
 	{
 		var target = DropTargetFolder(e.Source);
-		if (_tab is null || target is null || GetDroppedPaths(e.Data).Count == 0)
+		var paths = GetDroppedPaths(e.Data);
+		if (_tab is null || target is null || paths.Count == 0 || paths.Contains(target) || paths.All(p => System.IO.Path.GetDirectoryName(p) == target))
 		{
 			e.DragEffects = DragDropEffects.None;
+			ClearDropFeedback();
 			return;
 		}
-		e.DragEffects = e.KeyModifiers.HasFlag(KeyModifiers.Control) ? DragDropEffects.Copy : DragDropEffects.Move;
+
+		// Same rule as the drop: move within a drive, copy across drives, Ctrl always copies.
+		var copy = e.KeyModifiers.HasFlag(KeyModifiers.Control) || paths.Any(p => MountService.GetMountPoint(p) != MountService.GetMountPoint(target));
+		e.DragEffects = copy ? DragDropEffects.Copy : DragDropEffects.Move;
+
+		// Highlight the folder under the pointer, and show "Move to Documents" next to the pointer, as Windows does.
+		var container = ContainerFromSource(e.Source);
+		if (container is not { DataContext: FileItem { IsDirectory: true } })
+			container = null;
+		if (container != _dropTarget)
+		{
+			_dropTarget?.Classes.Remove("droptarget");
+			_dropTarget = container;
+			_dropTarget?.Classes.Add("droptarget");
+		}
+		var name = System.IO.Path.GetFileName(target.TrimEnd('/')) is { Length: > 0 } n ? n : target;
+		DragCaptionText.Text = copy ? $"{Loc.Get("CopyTo", "Copy to")} {name}" : $"{Loc.Get("MoveTo", "Move to")} {name}";
+		DragCaptionIcon.Symbol = copy ? Symbol.Copy : Symbol.ArrowMove;
+		var at = e.GetPosition(OverlayLayer);
+		Canvas.SetLeft(DragCaption, at.X + 16);
+		Canvas.SetTop(DragCaption, at.Y + 18);
+		DragCaption.IsVisible = true;
+	}
+
+	private ListBoxItem? _dropTarget;
+
+	private void ClearDropFeedback()
+	{
+		_dropTarget?.Classes.Remove("droptarget");
+		_dropTarget = null;
+		DragCaption.IsVisible = false;
+	}
+
+	private static ListBoxItem? ContainerFromSource(object? source)
+	{
+		var visual = source as Visual;
+		while (visual is not null and not ListBox)
+		{
+			if (visual is ListBoxItem container)
+				return container;
+			visual = visual.GetVisualParent();
+		}
+		return null;
 	}
 
 	private string? DropTargetFolder(object? source)
@@ -402,6 +603,7 @@ public partial class ShellView : UserControl
 
 	private async void OnDrop(object? sender, DragEventArgs e)
 	{
+		ClearDropFeedback();
 		var target = DropTargetFolder(e.Source);
 		var paths = GetDroppedPaths(e.Data);
 		if (_tab is null || target is null || paths.Count == 0)
@@ -426,11 +628,10 @@ public partial class ShellView : UserControl
 
 	private void AddHeaderCell(int column, string title, SortColumn? sort)
 	{
-		var settings = SettingsService.Current;
 		var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
 		content.Children.Add(new TextBlock { Text = title, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
-		if (sort is { } s && settings.SortBy == s)
-			content.Children.Add(new SymbolIcon { Symbol = settings.SortDescending ? Symbol.ChevronDown : Symbol.ChevronUp, FontSize = 10, VerticalAlignment = VerticalAlignment.Center });
+		if (sort is { } s && _tab?.SortBy == s)
+			content.Children.Add(new SymbolIcon { Symbol = _tab.SortDescending ? Symbol.ChevronDown : Symbol.ChevronUp, FontSize = 10, VerticalAlignment = VerticalAlignment.Center });
 
 		var button = new Button { Content = content, Classes = { "column" }, Margin = new Thickness(column == DetailsColumns.Name ? 0 : 0, 0, 0, 0) };
 		if (sort is { } sc)
@@ -481,21 +682,17 @@ public partial class ShellView : UserControl
 		if (_tab is null)
 			return;
 		var s = SettingsService.Current;
-		void Add(string text, SortColumn col) => items.Add(Radio(text, s.SortBy == col, () =>
-		{
-			s.SortBy = col;
-			SettingsService.Save();
-			_tab.Main.OnSortChanged();
-			BuildHeader();
-		}));
+		var tab = _tab;
+		// Sorting applies to this folder only (see FolderViewService).
+		void Add(string text, SortColumn col) => items.Add(Radio(text, tab.SortBy == col, () => tab.SetSortCommand.Execute(col)));
 		Add(Loc.Get("Name", "Name"), SortColumn.Name);
 		Add(Loc.Get("DateModifiedLowerCase", "Date modified"), SortColumn.DateModified);
 		Add(Loc.Get("DateCreated", "Date created"), SortColumn.DateCreated);
 		Add(Loc.Get("Type", "Type"), SortColumn.Type);
 		Add(Loc.Get("Size", "Size"), SortColumn.Size);
 		items.Add(Separator());
-		items.Add(Radio(Loc.Get("Ascending", "Ascending"), !s.SortDescending, () => { _tab.SetSortDirectionCommand.Execute(false); BuildHeader(); }));
-		items.Add(Radio(Loc.Get("Descending", "Descending"), s.SortDescending, () => { _tab.SetSortDirectionCommand.Execute(true); BuildHeader(); }));
+		items.Add(Radio(Loc.Get("Ascending", "Ascending"), !tab.SortDescending, () => tab.SetSortDirectionCommand.Execute(false)));
+		items.Add(Radio(Loc.Get("Descending", "Descending"), tab.SortDescending, () => tab.SetSortDirectionCommand.Execute(true)));
 		items.Add(Separator());
 		items.Add(Check(Loc.Get("SettingsListAndSortDirectoriesAlongsideFiles", "Folders first"), s.FoldersFirst, () =>
 		{
@@ -516,6 +713,12 @@ public partial class ShellView : UserControl
 		Add(Loc.Get("SmallIcons", "Small icons"), LayoutMode.GridSmall, Symbol.Grid, "Ctrl+Shift+3");
 		Add(Loc.Get("MediumIcons", "Medium icons"), LayoutMode.GridMedium, Symbol.Grid, "Ctrl+Shift+4");
 		Add(Loc.Get("LargeIcons", "Large icons"), LayoutMode.GridLarge, Symbol.Grid, "Ctrl+Shift+5");
+		if (_tab.HasCustomView)
+		{
+			// The folder has its own view; offer to go back to the default from Settings.
+			items.Add(Separator());
+			items.Add(Item(Loc.Get("UseDefaultLayout", "Use the default view for this folder"), Symbol.ArrowReset, _tab.ResetFolderViewCommand));
+		}
 	}
 
 	private void BuildMoreMenu(ItemCollection items)
@@ -525,6 +728,9 @@ public partial class ShellView : UserControl
 			return;
 		var main = _tab.Main;
 		var s = SettingsService.Current;
+		items.Add(Item(UndoService.UndoDescription is { } undo ? $"{Loc.Get("Undo", "Undo")}: {undo}" : Loc.Get("Undo", "Undo"), Symbol.ArrowUndo, main.UndoCommand, gesture: "Ctrl+Z", isEnabled: UndoService.CanUndo));
+		items.Add(Item(UndoService.RedoDescription is { } redo ? $"{Loc.Get("Redo", "Redo")}: {redo}" : Loc.Get("Redo", "Redo"), Symbol.ArrowRedo, main.RedoCommand, gesture: "Ctrl+Y", isEnabled: UndoService.CanRedo));
+		items.Add(Separator());
 		items.Add(Item(Loc.Get("SelectAll", "Select all"), Symbol.SelectAllOn, _tab.SelectAllCommand, gesture: "Ctrl+A"));
 		items.Add(Item(Loc.Get("InvertSelection", "Invert selection"), Symbol.SelectAllOff, _tab.InvertSelectionCommand));
 		items.Add(Item(Loc.Get("ClearSelection", "Clear selection"), Symbol.Dismiss, _tab.ClearSelectionCommand));

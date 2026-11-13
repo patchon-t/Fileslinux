@@ -8,7 +8,10 @@
 	  Normal 250 ms (ControlNormalAnimationDuration)  - menus, flyouts, progress
 	  Decelerate 0.1,0.9,0.2,1.0 / FastOutSlowIn 0,0,0,1
 -->
-<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:ic="using:FluentIcons.Avalonia">
 
 	<!--  Hover and press: background color fades in 83 ms, like every WinUI control  -->
 	<Style Selector="Button /template/ ContentPresenter#PART_ContentPresenter, ToggleButton /template/ ContentPresenter#PART_ContentPresenter, DropDownButton /template/ ContentPresenter#PART_ContentPresenter, ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
@@ -105,4 +108,65 @@
 		</Setter>
 	</Style>
 
+	<!--
+		Animated icons (WinUI AnimatedIcon). The Windows app animates the back arrow (AnimatedBackVisualSource),
+		the sidebar button (AnimatedGlobalNavigationButtonVisualSource), the settings gear (AnimatedSettingsVisualSource),
+		expand/collapse chevrons and drop-down chevrons. Same idea here: the icon reacts to hover and press.
+	-->
+	<Style Selector="Button.anim-back ic|SymbolIcon, Button.anim-forward ic|SymbolIcon, Button.anim-up ic|SymbolIcon, Button.anim-nav ic|SymbolIcon, Button.anim-settings ic|SymbolIcon, ic|SymbolIcon.sectionchevron, Button.crumbchevron ic|SymbolIcon">
+		<Setter Property="Transitions">
+			<Transitions>
+				<TransformOperationsTransition Easing="0.1,0.9,0.2,1.0" Property="RenderTransform" Duration="0:0:0.25" />
+			</Transitions>
+		</Setter>
+	</Style>
+	<Style Selector="Button.anim-back ic|SymbolIcon, Button.anim-forward ic|SymbolIcon, Button.anim-up ic|SymbolIcon, Button.anim-nav ic|SymbolIcon, Button.anim-settings ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+	</Style>
+
+	<!--  Back / forward / up: the arrow nudges the way it points  -->
+	<Style Selector="Button.anim-back:pointerover ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="translate(-1px, 0px)" />
+	</Style>
+	<Style Selector="Button.anim-back:pressed ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="translate(-4px, 0px)" />
+	</Style>
+	<Style Selector="Button.anim-forward:pointerover ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="translate(1px, 0px)" />
+	</Style>
+	<Style Selector="Button.anim-forward:pressed ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="translate(4px, 0px)" />
+	</Style>
+	<Style Selector="Button.anim-up:pointerover ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="translate(0px, -1px)" />
+	</Style>
+	<Style Selector="Button.anim-up:pressed ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="translate(0px, -4px)" />
+	</Style>
+
+	<!--  Sidebar button: the icon squeezes when pressed  -->
+	<Style Selector="Button.anim-nav:pressed ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="scale(0.75, 1)" />
+	</Style>
+
+	<!--  Settings: the gear turns on hover and a bit more when pressed  -->
+	<Style Selector="Button.anim-settings:pointerover ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="rotate(60deg)" />
+	</Style>
+	<Style Selector="Button.anim-settings:pressed ic|SymbolIcon">
+		<Setter Property="RenderTransform" Value="rotate(120deg)" />
+	</Style>
+
+	<!--  Drop-down chevrons bounce down when pressed  -->
+	<Style Selector="DropDownButton /template/ PathIcon#DropDownGlyph">
+		<Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+		<Setter Property="Transitions">
+			<Transitions>
+				<TransformOperationsTransition Easing="0.1,0.9,0.2,1.0" Property="RenderTransform" Duration="0:0:0.167" />
+			</Transitions>
+		</Setter>
+	</Style>
+	<Style Selector="DropDownButton:pressed /template/ PathIcon#DropDownGlyph">
+		<Setter Property="RenderTransform" Value="translate(0px, 3px)" />
+	</Style>
 </Styles>

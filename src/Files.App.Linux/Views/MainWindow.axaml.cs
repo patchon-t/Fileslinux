@@ -50,6 +50,7 @@ public partial class MainWindow : Window
 		DragDrop.SetAllowDrop(SidebarList, true);
 		SidebarList.AddHandler(DragDrop.DragOverEvent, OnSidebarDragOver);
 		SidebarList.AddHandler(DragDrop.DropEvent, OnSidebarDrop);
+		SidebarList.AddHandler(DragDrop.DragLeaveEvent, (_, _) => SetSidebarDropTarget(null));
 		SidebarSplitter.DragCompleted += (_, _) =>
 		{
 			SettingsService.Current.SidebarWidth = ContentGrid.ColumnDefinitions[0].ActualWidth;
@@ -65,8 +66,10 @@ public partial class MainWindow : Window
 			Shell.FocusActiveList();
 		};
 		Closing += (_, _) => SaveWindowState();
+		Opened += (_, _) => OpenWindows.Add(this);
 		Closed += (_, _) =>
 		{
+			OpenWindows.Remove(this);
 			_vm?.Detach();
 			SettingsService.Changed -= OnSettingsChanged;
 		};
@@ -81,11 +84,19 @@ public partial class MainWindow : Window
 		SettingsService.Changed += OnSettingsChanged;
 		ApplyTitleBar();
 
+		// Tabs: drag to reorder; drag out of the tab bar to open the tab in its own window.
+		TabList.AddHandler(PointerPressedEvent, OnTabPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+		AddHandler(PointerMovedEvent, OnTabPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
+		AddHandler(PointerReleasedEvent, (_, _) => _draggedTab = null, RoutingStrategies.Tunnel, handledEventsToo: true);
+
 		// The refresh icon spins when you refresh, and keeps spinning while the folder loads.
 		RefreshButton.Click += (_, _) => SpinRefreshIcon();
 	}
 
 	private void OnSettingsChanged(object? sender, EventArgs e) => ApplyTitleBar();
+
+	/// <summary>All open Files windows (tabs can be dragged out into new ones).</summary>
+	public static List<MainWindow> OpenWindows { get; } = [];
 
 	/// <summary>True when the app draws its own title bar (tabs + caption buttons) instead of the desktop's.</summary>
 	public bool UsesCustomTitleBar => !SettingsService.Current.UseSystemTitleBar;
@@ -138,6 +149,105 @@ public partial class MainWindow : Window
 			BeginResizeDrag(edge, e);
 			e.Handled = true;
 		}
+	}
+
+	// ---------------- Tab dragging ----------------
+
+	private ShellTabViewModel? _draggedTab;
+	private Point _tabDragStart;
+	private bool _tabDragging;
+	private PointerPressedEventArgs? _tabPress;
+
+	/// <summary>How far outside the tab bar (in pixels) a tab must be dragged to come out into its own window.</summary>
+	private const double TearOutDistance = 32;
+
+	private void OnTabPointerPressed(object? sender, PointerPressedEventArgs e)
+	{
+		_draggedTab = null;
+		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed || e.Source is not Visual source || source.FindAncestorOfType<Button>(includeSelf: true) is not null)
+			return;
+		if (source.FindAncestorOfType<ListBoxItem>(includeSelf: true) is not { DataContext: ShellTabViewModel tab })
+			return;
+		_draggedTab = tab;
+		_tabDragStart = e.GetPosition(this);
+		_tabDragging = false;
+		_tabPress = e;
+	}
+
+	private void OnTabPointerMoved(object? sender, PointerEventArgs e)
+	{
+		if (_draggedTab is not { } tab || _vm is null)
+			return;
+		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+		{
+			_draggedTab = null;
+			return;
+		}
+		var position = e.GetPosition(this);
+		if (!_tabDragging)
+		{
+			var d = position - _tabDragStart;
+			if (Math.Abs(d.X) < 6 && Math.Abs(d.Y) < 6)
+				return;
+			_tabDragging = true;
+
+			// Dragging the only tab moves the window, as on Windows.
+			if (_vm.Tabs.Count == 1)
+			{
+				_draggedTab = null;
+				if (UsesCustomTitleBar && _tabPress is not null)
+				{
+					try
+					{
+						BeginMoveDrag(_tabPress);
+					}
+					catch (Exception)
+					{
+						// Not supported by this window manager.
+					}
+				}
+				return;
+			}
+		}
+
+		var inBar = TabBar.TranslatePoint(default, this) is { } barOrigin
+			? new Rect(barOrigin, TabBar.Bounds.Size).Inflate(new Thickness(0, TearOutDistance))
+			: default;
+		if (!inBar.Contains(position) || position.X < 0 || position.X > Bounds.Width)
+		{
+			_draggedTab = null;
+			TearOutTab(tab, this.PointToScreen(position));
+			return;
+		}
+
+		// Reorder: move the tab to the slot under the pointer.
+		for (int i = 0; i < _vm.Tabs.Count; i++)
+		{
+			if (TabList.ContainerFromIndex(i) is { } container && container.TranslatePoint(default, this) is { } origin
+				&& position.X >= origin.X && position.X < origin.X + container.Bounds.Width)
+			{
+				_vm.MoveTab(tab, i);
+				break;
+			}
+		}
+	}
+
+	/// <summary>Opens the tab in a new window under the pointer and removes it from this one.</summary>
+	public MainWindow? TearOutTab(ShellTabViewModel tab, PixelPoint screenPoint)
+	{
+		if (_vm is null || _vm.Tabs.Count < 2)
+			return null;
+		var vm = new MainWindowViewModel();
+		var window = new MainWindow { DataContext = vm, Width = Bounds.Width, Height = Bounds.Height };
+		var newTab = vm.OpenTab(tab.CurrentPath);
+		newTab.CopyHistoryFrom(tab);
+		vm.SelectedTab = newTab;
+		window.WindowStartupLocation = WindowStartupLocation.Manual;
+		window.Position = new PixelPoint(Math.Max(0, screenPoint.X - 120), Math.Max(0, screenPoint.Y - 20));
+		_vm.DetachTab(tab);
+		window.Show();
+		window.Activate();
+		return window;
 	}
 
 	private bool _spinning;
@@ -349,6 +459,9 @@ public partial class MainWindow : Window
 		{
 			menu.Items.Add(new MenuItem { Header = ex.Message, IsEnabled = false });
 		}
+		// The chevron turns to point down while its folder menu is open.
+		control.Classes.Add("open");
+		menu.Closed += (_, _) => control.Classes.Remove("open");
 		menu.Open(control);
 	}
 
@@ -504,13 +617,28 @@ public partial class MainWindow : Window
 		if (item is null || item.Path is null || paths.Count == 0)
 		{
 			e.DragEffects = DragDropEffects.None;
+			SetSidebarDropTarget(null);
 			return;
 		}
 		e.DragEffects = item.Kind == SidebarItemKind.Trash ? DragDropEffects.Move : (e.KeyModifiers.HasFlag(KeyModifiers.Control) ? DragDropEffects.Copy : DragDropEffects.Move);
+		SetSidebarDropTarget(SidebarList.ContainerFromItem(item) as ListBoxItem);
+	}
+
+	private ListBoxItem? _sidebarDropTarget;
+
+	/// <summary>Highlights the sidebar item files are being dragged onto.</summary>
+	private void SetSidebarDropTarget(ListBoxItem? container)
+	{
+		if (container == _sidebarDropTarget)
+			return;
+		_sidebarDropTarget?.Classes.Remove("droptarget");
+		_sidebarDropTarget = container;
+		_sidebarDropTarget?.Classes.Add("droptarget");
 	}
 
 	private async void OnSidebarDrop(object? sender, DragEventArgs e)
 	{
+		SetSidebarDropTarget(null);
 		var item = SidebarItemFromSource(e.Source);
 		var paths = ShellView.GetDroppedPaths(e.Data);
 		if (_vm is null || item?.Path is null || paths.Count == 0)
@@ -519,13 +647,14 @@ public partial class MainWindow : Window
 		if (item.Kind == SidebarItemKind.Trash)
 		{
 			var errors = new List<string>();
+			var trashed = new List<TrashEntry>();
 			await Task.Run(() =>
 			{
 				foreach (var p in paths)
 				{
 					try
 					{
-						TrashService.Default.Trash(p);
+						trashed.Add(TrashService.Default.Trash(p));
 					}
 					catch (Exception ex)
 					{
@@ -533,6 +662,8 @@ public partial class MainWindow : Window
 					}
 				}
 			});
+			if (trashed.Count > 0)
+				UndoService.Record(UndoService.ForTrash(trashed));
 			if (errors.Count > 0)
 				await _vm.Dialogs.ShowErrorAsync(Loc.Get("Delete", "Delete"), string.Join("\n", errors));
 			_vm.RefreshAll();
@@ -561,13 +692,22 @@ public partial class MainWindow : Window
 
 	private bool IsTextInputFocused => FocusManager?.GetFocusedElement() is TextBox;
 
-	/// <summary>File shortcuts (Enter, Delete, Ctrl+C...) apply unless the user is typing, or a button, menu or the sidebar has focus.</summary>
-	private bool CanUseFileShortcuts()
+	/// <summary>
+	/// File shortcuts (Ctrl+C, Ctrl+V, F2, Delete...) work wherever the focus is, except while typing in a text box.
+	/// Enter and Space are left to a focused button or menu, and keys that act on items (Enter, Delete, F2,
+	/// Backspace) are left to the sidebar when it has focus.
+	/// </summary>
+	private bool CanUseFileShortcut(Key key)
 	{
 		var focused = FocusManager?.GetFocusedElement() as Control;
-		if (focused is TextBox or Button or MenuItem or ComboBox)
+		if (focused is TextBox)
 			return false;
-		return focused is null || (focused != SidebarList && focused.FindAncestorOfType<ListBox>() != SidebarList);
+		if (focused is Button or MenuItem or ComboBox && key is Key.Enter or Key.Space)
+			return false;
+		var inSidebar = focused is not null && (focused == SidebarList || focused.FindAncestorOfType<ListBox>() == SidebarList);
+		if (inSidebar && key is Key.Enter or Key.Space or Key.Delete or Key.F2 or Key.Back)
+			return false;
+		return true;
 	}
 
 	private void OnWindowTextInput(object? sender, TextInputEventArgs e)
@@ -633,6 +773,7 @@ public partial class MainWindow : Window
 				BeginEditPath();
 				break;
 			case Key.F when ctrl:
+			case Key.E when ctrl:
 			case Key.F3:
 				SearchBox.Focus();
 				SearchBox.SelectAll();
@@ -678,7 +819,7 @@ public partial class MainWindow : Window
 				break;
 		}
 
-		if (handled || tab is null || !CanUseFileShortcuts())
+		if (handled || tab is null || !CanUseFileShortcut(e.Key))
 		{
 			e.Handled = handled;
 			return;
@@ -702,6 +843,16 @@ public partial class MainWindow : Window
 				break;
 			case Key.A when ctrl:
 				tab.SelectAllCommand.Execute(null);
+				break;
+			case Key.Z when ctrl && shift:
+			case Key.Y when ctrl:
+				_vm.RedoCommand.Execute(null);
+				break;
+			case Key.Z when ctrl:
+				_vm.UndoCommand.Execute(null);
+				break;
+			case Key.D when ctrl:
+				tab.DeleteCommand.Execute(null);
 				break;
 			case Key.Delete when shift:
 				tab.DeletePermanentlyCommand.Execute(null);

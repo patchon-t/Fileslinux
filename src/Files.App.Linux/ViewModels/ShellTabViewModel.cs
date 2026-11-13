@@ -29,7 +29,10 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 	public ShellTabViewModel(MainWindowViewModel main)
 	{
 		_main = main;
-		Layout = SettingsService.Current.DefaultLayout;
+		var view = FolderViewService.Get(null);
+		Layout = view.Layout;
+		SortBy = view.SortBy;
+		SortDescending = view.SortDescending;
 		ClipboardService.Changed += OnClipboardChanged;
 	}
 
@@ -182,6 +185,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		CurrentPath = path;
 		if (previous != path)
 			OnPropertyChanged(nameof(Title));
+		ApplyFolderView();
 		UpdateHistoryState();
 		UpdateBreadcrumbs();
 		_ = LoadAsync();
@@ -254,6 +258,18 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 	{
 		CanGoBack = _back.Count > 0;
 		CanGoForward = _forward.Count > 0;
+	}
+
+	/// <summary>Takes over another tab's back/forward history (used when a tab is dragged out into a new window).</summary>
+	public void CopyHistoryFrom(ShellTabViewModel other)
+	{
+		_back.Clear();
+		foreach (var entry in other._back.Reverse())
+			_back.Push(entry);
+		_forward.Clear();
+		foreach (var entry in other._forward.Reverse())
+			_forward.Push(entry);
+		UpdateHistoryState();
 	}
 
 	public IReadOnlyList<string?> BackHistory => [.. _back];
@@ -363,7 +379,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 
 	private void ApplyItems(List<FileItem> items, HashSet<string>? reselect)
 	{
-		var comparer = FileSystemService.GetComparer(SettingsService.Current.SortBy, SettingsService.Current.SortDescending, SettingsService.Current.FoldersFirst);
+		var comparer = FileSystemService.GetComparer(SortBy, SortDescending, SettingsService.Current.FoldersFirst);
 		items.Sort(comparer);
 		_allItems = items;
 
@@ -465,6 +481,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		{
 			_back.Push(CurrentPath);
 			CurrentPath = root;
+			ApplyFolderView();
 			UpdateBreadcrumbs();
 			UpdateHistoryState();
 		}
@@ -715,6 +732,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		try
 		{
 			var target = FileOperationsService.Rename(item.FullPath, name);
+			UndoService.Record(UndoService.ForRename(item.FullPath, target));
 			_pendingSelectPath = target;
 			await LoadAsync();
 		}
@@ -751,6 +769,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 
 		var op = _main.Operations.Start(Loc.Format("DeleteItemsDialogTitle", "Delete {0, plural, one {item} other {items}}", items.Count));
 		var errors = new List<string>();
+		var trashed = new List<TrashEntry>();
 		await Task.Run(() =>
 		{
 			foreach (var item in items)
@@ -762,7 +781,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 					else if (permanent)
 						FileOperationsService.DeletePermanently(item.FullPath);
 					else
-						TrashService.Default.Trash(item.FullPath);
+						trashed.Add(TrashService.Default.Trash(item.FullPath));
 				}
 				catch (Exception ex)
 				{
@@ -771,6 +790,8 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 			}
 		});
 		_main.Operations.Complete(op, errors.Count > 0 ? string.Join("\n", errors) : null);
+		if (trashed.Count > 0)
+			UndoService.Record(UndoService.ForTrash(trashed));
 
 		if (errors.Count > 0 && !permanent)
 		{
@@ -811,6 +832,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		try
 		{
 			_pendingSelectPath = FileOperationsService.CreateFolder(CurrentPath!, name.Trim());
+			UndoService.Record(UndoService.ForCreate(_pendingSelectPath));
 			await LoadAsync();
 		}
 		catch (Exception ex)
@@ -830,6 +852,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		try
 		{
 			_pendingSelectPath = FileOperationsService.CreateFile(CurrentPath!, name.Trim());
+			UndoService.Record(UndoService.ForCreate(_pendingSelectPath));
 			await LoadAsync();
 		}
 		catch (Exception ex)
@@ -977,35 +1000,82 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		_main.RefreshTrashState();
 	}
 
+	// ---------------- Per-folder view ----------------
+
+	/// <summary>Sort column for this folder (per folder, defaults from Settings).</summary>
+	[ObservableProperty]
+	public partial SortColumn SortBy { get; private set; }
+
+	[ObservableProperty]
+	public partial bool SortDescending { get; private set; }
+
+	/// <summary>True when this folder has its own layout or sort instead of the defaults.</summary>
+	[ObservableProperty]
+	public partial bool HasCustomView { get; private set; }
+
+	private string ViewKey => FolderViewService.KeyFor(CurrentPath);
+
+	/// <summary>Shows the folder with its remembered layout and sort, or the defaults.</summary>
+	public void ApplyFolderView()
+	{
+		var view = FolderViewService.Get(CurrentPath);
+		var resort = view.SortBy != SortBy || view.SortDescending != SortDescending;
+		SortBy = view.SortBy;
+		SortDescending = view.SortDescending;
+		HasCustomView = view.IsCustom;
+		if (Layout != view.Layout)
+		{
+			Layout = view.Layout;
+			ThumbnailService.QueueThumbnails(Items.Where(i => i.Thumbnail is null), (int)GridIconSize * 2, _loadCts?.Token ?? default);
+		}
+		if (resort && Items.Count > 0)
+			Resort();
+	}
+
+	/// <summary>Changes the layout of this folder only; other folders keep theirs.</summary>
 	[RelayCommand]
 	private void SetLayout(LayoutMode mode)
 	{
-		Layout = mode;
-		SettingsService.Current.DefaultLayout = mode;
-		SettingsService.Save();
-		ThumbnailService.QueueThumbnails(Items.Where(i => i.Thumbnail is null), (int)GridIconSize * 2, _loadCts?.Token ?? default);
+		FolderViewService.SetLayout(CurrentPath, mode);
+		_main.OnFolderViewChanged(ViewKey);
 	}
 
 	[RelayCommand]
 	private void SetSort(SortColumn column)
 	{
-		if (SettingsService.Current.SortBy == column)
-			SettingsService.Current.SortDescending = !SettingsService.Current.SortDescending;
-		else
-		{
-			SettingsService.Current.SortBy = column;
-			SettingsService.Current.SortDescending = false;
-		}
-		SettingsService.Save();
-		_main.OnSortChanged();
+		var descending = SortBy == column && !SortDescending;
+		FolderViewService.SetSort(CurrentPath, column, descending);
+		_main.OnFolderViewChanged(ViewKey);
 	}
 
 	[RelayCommand]
 	private void SetSortDirection(bool descending)
 	{
-		SettingsService.Current.SortDescending = descending;
-		SettingsService.Save();
-		_main.OnSortChanged();
+		FolderViewService.SetSort(CurrentPath, SortBy, descending);
+		_main.OnFolderViewChanged(ViewKey);
+	}
+
+	/// <summary>This folder follows the default layout and sort again.</summary>
+	[RelayCommand]
+	private void ResetFolderView()
+	{
+		FolderViewService.Reset(CurrentPath);
+		_main.OnFolderViewChanged(ViewKey);
+	}
+
+	/// <summary>Called when the view of a folder changed (in this tab or another one).</summary>
+	public void OnFolderViewChanged(string key)
+	{
+		if (key == ViewKey)
+			ApplyFolderView();
+	}
+
+	/// <summary>Ctrl + mouse wheel: bigger or smaller items, in the order Details, List, small, medium, large icons.</summary>
+	public void StepLayout(int direction)
+	{
+		var next = (int)Layout + Math.Sign(direction);
+		if (next >= (int)LayoutMode.Details && next <= (int)LayoutMode.GridLarge && !IsHome)
+			SetLayout((LayoutMode)next);
 	}
 
 	/// <summary>Handles files dropped onto the layout or onto a folder item.</summary>

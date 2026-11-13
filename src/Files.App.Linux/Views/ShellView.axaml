@@ -58,6 +58,7 @@
 						IsVisible="{Binding IsFolder}" />
 
 					<Button
+						x:Name="CutButton"
 						Classes="subtle toolbar"
 						Command="{Binding CutCommand}"
 						IsVisible="{Binding !IsTrash}"
@@ -66,6 +67,7 @@
 						<ic:SymbolIcon FontSize="16" Symbol="Cut" />
 					</Button>
 					<Button
+						x:Name="CopyButton"
 						Classes="subtle toolbar"
 						Command="{Binding CopyCommand}"
 						IsVisible="{Binding !IsTrash}"
@@ -74,6 +76,7 @@
 						<ic:SymbolIcon FontSize="16" Symbol="Copy" />
 					</Button>
 					<Button
+						x:Name="PasteButton"
 						Classes="subtle toolbar"
 						Command="{Binding PasteCommand}"
 						IsVisible="{Binding !IsTrash}"
@@ -82,6 +85,7 @@
 						<ic:SymbolIcon FontSize="16" Symbol="ClipboardPaste" />
 					</Button>
 					<Button
+						x:Name="RenameButton"
 						Classes="subtle toolbar"
 						Command="{Binding RenameCommand}"
 						IsVisible="{Binding !IsTrash}"
@@ -90,6 +94,7 @@
 						<ic:SymbolIcon FontSize="16" Symbol="Rename" />
 					</Button>
 					<Button
+						x:Name="DeleteButton"
 						Classes="subtle toolbar"
 						Command="{Binding DeleteCommand}"
 						IsEnabled="{Binding HasSelection}"
@@ -400,6 +405,35 @@
 					VerticalAlignment="Top"
 					IsIndeterminate="True"
 					IsVisible="{Binding IsLoading}" />
+
+				<!--  Drag-select box, and the "Move to ..." label shown while dragging files  -->
+				<Canvas x:Name="OverlayLayer" ClipToBounds="True" IsHitTestVisible="False">
+					<Border
+						x:Name="Marquee"
+						Background="{DynamicResource App.Theme.MarqueeFillBrush}"
+						BorderBrush="{DynamicResource App.Theme.AccentBrush}"
+						BorderThickness="1"
+						CornerRadius="2"
+						IsVisible="False" />
+					<Border
+						x:Name="DragCaption"
+						Padding="8,4"
+						Background="{DynamicResource App.Theme.CardBrush}"
+						BorderBrush="{DynamicResource App.Theme.CardBorderBrush}"
+						BorderThickness="1"
+						BoxShadow="0 2 8 0 #30000000"
+						CornerRadius="4"
+						IsVisible="False">
+						<StackPanel Orientation="Horizontal" Spacing="6">
+							<ic:SymbolIcon
+								x:Name="DragCaptionIcon"
+								FontSize="14"
+								Foreground="{DynamicResource App.Theme.AccentBrush}"
+								Symbol="ArrowMove" />
+							<TextBlock x:Name="DragCaptionText" FontSize="12" />
+						</StackPanel>
+					</Border>
+				</Canvas>
 			</Panel>
 
 			<GridSplitter

@@ -150,27 +150,27 @@
 					Orientation="Horizontal"
 					Spacing="2">
 					<Button
-						Classes="subtle nav"
+						Classes="subtle nav anim-nav"
 						Command="{Binding ToggleSidebarCommand}"
 						ToolTip.Tip="{v:Loc ToggleSidebar, Toggle the sidebar}">
 						<ic:SymbolIcon FontSize="16" Symbol="PanelLeft" />
 					</Button>
 					<Button
 						x:Name="BackButton"
-						Classes="subtle nav"
+						Classes="subtle nav anim-back"
 						Command="{Binding SelectedTab.GoBackCommand, FallbackValue={x:Null}}"
 						ToolTip.Tip="{v:Loc Back, Back}">
 						<ic:SymbolIcon FontSize="16" Symbol="ArrowLeft" />
 					</Button>
 					<Button
 						x:Name="ForwardButton"
-						Classes="subtle nav"
+						Classes="subtle nav anim-forward"
 						Command="{Binding SelectedTab.GoForwardCommand, FallbackValue={x:Null}}"
 						ToolTip.Tip="{v:Loc Forward, Forward}">
 						<ic:SymbolIcon FontSize="16" Symbol="ArrowRight" />
 					</Button>
 					<Button
-						Classes="subtle nav"
+						Classes="subtle nav anim-up"
 						Command="{Binding SelectedTab.GoUpCommand, FallbackValue={x:Null}}"
 						IsEnabled="{Binding SelectedTab.CanGoUp, FallbackValue=False}"
 						ToolTip.Tip="{v:Loc Up, Up}">
@@ -235,7 +235,7 @@
 													Height="28"
 													Padding="0"
 													HorizontalContentAlignment="Center"
-													Classes="subtle"
+													Classes="subtle crumbchevron"
 													Click="OnBreadcrumbChevronClick"
 													IsVisible="{Binding !IsLast}">
 													<ic:SymbolIcon FontSize="10" Symbol="ChevronRight" />
@@ -305,7 +305,7 @@
 						</Button.Flyout>
 					</Button>
 					<Button
-						Classes="subtle nav"
+						Classes="subtle nav anim-settings"
 						Command="{Binding OpenSettingsCommand}"
 						ToolTip.Tip="{v:Loc Settings, Settings}">
 						<ic:SymbolIcon FontSize="16" Symbol="Settings" />
@@ -350,17 +350,11 @@
 									<ic:SymbolIcon
 										Grid.Column="1"
 										Margin="0,0,6,0"
+										Classes="sectionchevron"
+										Classes.collapsed="{Binding !IsExpanded}"
 										FontSize="10"
 										Foreground="{DynamicResource App.Theme.SecondaryTextBrush}"
-										IsVisible="{Binding IsExpanded}"
 										Symbol="ChevronDown" />
-									<ic:SymbolIcon
-										Grid.Column="1"
-										Margin="0,0,6,0"
-										FontSize="10"
-										Foreground="{DynamicResource App.Theme.SecondaryTextBrush}"
-										IsVisible="{Binding !IsExpanded}"
-										Symbol="ChevronRight" />
 								</Grid>
 								<!--  Item  -->
 								<Grid

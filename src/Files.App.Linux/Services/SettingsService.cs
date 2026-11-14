@@ -49,9 +49,12 @@ public sealed class AppSettings
 	public bool EnableAnimations { get; set; } = true;
 	/// <summary>False (default): tabs sit in the title bar with our own caption buttons, like Windows. True: use the desktop's title bar.</summary>
 	public bool UseSystemTitleBar { get; set; }
+	/// <summary>Icon style: "builtin", "system", "theme:NAME" or "pack:ID" (see IconService).</summary>
+	public string IconStyle { get; set; } = "builtin";
 	public bool IsSidebarOpen { get; set; } = true;
 	public double SidebarWidth { get; set; } = 240;
 	public double InfoPaneWidth { get; set; } = 300;
+	public double[]? DetailsColumnWidths { get; set; }
 	public LayoutMode DefaultLayout { get; set; } = LayoutMode.Details;
 	public SortColumn SortBy { get; set; } = SortColumn.Name;
 	public bool SortDescending { get; set; }

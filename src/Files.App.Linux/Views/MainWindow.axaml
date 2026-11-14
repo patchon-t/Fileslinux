@@ -374,7 +374,15 @@
 										FontSize="16"
 										Foreground="{Binding IconBrush}"
 										IconVariant="Filled"
+										IsVisible="{Binding !HasCustomIcon}"
 										Symbol="{Binding Icon}" />
+									<Image
+										Grid.Column="1"
+										Width="18"
+										Height="18"
+										Margin="8,0,11,0"
+										IsVisible="{Binding HasCustomIcon}"
+										Source="{Binding CustomIcon}" />
 									<TextBlock
 										Grid.Column="2"
 										VerticalAlignment="Center"

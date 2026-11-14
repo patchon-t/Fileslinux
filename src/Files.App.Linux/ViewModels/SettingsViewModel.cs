@@ -70,6 +70,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 		ShowDeleteConfirmation = _s.ShowDeleteConfirmation;
 		FoldersFirst = _s.FoldersFirst;
 		EnableAnimations = _s.EnableAnimations;
+		LoadIconStyles();
 		UseSystemTitleBar = _s.UseSystemTitleBar;
 		TerminalCommand = _s.TerminalCommand ?? string.Empty;
 	}
@@ -118,6 +119,151 @@ public sealed partial class SettingsViewModel : ObservableObject
 
 	[ObservableProperty]
 	public partial bool EnableAnimations { get; set; }
+
+	// ---------------- Icons ----------------
+
+	/// <summary>Files' own icons, the desktop's icon theme, every installed icon theme, and the user's icon packs.</summary>
+	[ObservableProperty]
+	public partial List<EnumOption<string>> IconStyles { get; set; } = [];
+
+	[ObservableProperty]
+	public partial EnumOption<string>? SelectedIconStyle { get; set; }
+
+	[ObservableProperty]
+	public partial string? IconMessage { get; set; }
+
+	public bool IsPackSelected => SelectedIconStyle?.Value.StartsWith("pack:", StringComparison.Ordinal) == true;
+
+	public string IconPacksFolder => Services.Icons.IconPack.PacksDirectory;
+
+	private bool _loadingIcons;
+
+	private void LoadIconStyles(string? select = null)
+	{
+		_loadingIcons = true;
+		var system = Services.Icons.IconTheme.DetectSystemTheme();
+		var list = new List<EnumOption<string>>
+		{
+			new(Services.Icons.IconService.Builtin, Loc.Get("IconsBuiltin", "Files (Fluent)")),
+			new(Services.Icons.IconService.System, system is null ? Loc.Get("IconsSystem", "System icon theme") : $"{Loc.Get("IconsSystem", "System icon theme")} ({system})"),
+		};
+		list.AddRange(Services.Icons.IconTheme.Installed().Select(t => new EnumOption<string>("theme:" + t.Name, $"{Loc.Get("IconTheme", "Theme")}: {t.DisplayName}")));
+		list.AddRange(Services.Icons.IconPack.Installed().Select(p => new EnumOption<string>("pack:" + p.Id, $"{Loc.Get("IconPack", "Icon pack")}: {p.DisplayName}")));
+		IconStyles = list;
+		var wanted = select ?? _s.IconStyle;
+		SelectedIconStyle = list.FirstOrDefault(o => o.Value == wanted) ?? list[0];
+		_loadingIcons = false;
+	}
+
+	partial void OnSelectedIconStyleChanged(EnumOption<string>? value)
+	{
+		OnPropertyChanged(nameof(IsPackSelected));
+		if (value is null || _loadingIcons || value.Value == _s.IconStyle)
+			return;
+		_s.IconStyle = value.Value;
+		SettingsService.Save();
+		Services.Icons.IconService.Apply(value.Value);
+		IconMessage = null;
+	}
+
+	/// <summary>Imports a .zip icon pack (or a pack's icons.json) and switches to it.</summary>
+	public void ImportIconPack(string path)
+	{
+		try
+		{
+			var pack = Services.Icons.IconPack.Import(path);
+			LoadIconStyles();
+			SelectedIconStyle = IconStyles.First(o => o.Value == "pack:" + pack.Id);
+			IconMessage = $"\"{pack.DisplayName}\" was imported.";
+		}
+		catch (Exception ex)
+		{
+			IconMessage = ex.Message;
+		}
+	}
+
+	/// <summary>Creates an example icon pack to start from, switches to it and opens its folder.</summary>
+	[RelayCommand]
+	private void CreateExampleIconPack()
+	{
+		var folder = Services.Icons.IconPack.CreateExample();
+		LoadIconStyles();
+		SelectedIconStyle = IconStyles.First(o => o.Value == "pack:" + Path.GetFileName(folder));
+		Services.Icons.IconService.Apply(_s.IconStyle);
+		IconMessage = $"Example pack created in {folder}. Edit icons.json and the images, then pick it again here.";
+		try
+		{
+			LauncherService.OpenWithDefault(folder);
+		}
+		catch
+		{
+			// No file manager to show it; the path is in the message.
+		}
+	}
+
+	[RelayCommand]
+	private void OpenIconPacksFolder()
+	{
+		Directory.CreateDirectory(IconPacksFolder);
+		try
+		{
+			LauncherService.OpenWithDefault(IconPacksFolder);
+		}
+		catch (Exception ex)
+		{
+			IconMessage = ex.Message;
+		}
+	}
+
+	/// <summary>Reloads the current pack after editing its files.</summary>
+	[RelayCommand]
+	private void ReloadIcons()
+	{
+		LoadIconStyles();
+		Services.Icons.IconService.Apply(_s.IconStyle);
+		IconMessage = Loc.Get("IconsReloaded", "Icons reloaded.");
+	}
+
+	/// <summary>
+	/// Installs the selected pack as a freedesktop icon theme (~/.local/share/icons) and, where the desktop allows it,
+	/// makes it the icon theme for all apps.
+	/// </summary>
+	[RelayCommand]
+	private void UseIconPackForAllApps()
+	{
+		if (Services.Icons.IconService.ActivePack is not { } pack)
+			return;
+		try
+		{
+			var system = Services.Icons.IconTheme.DetectSystemTheme();
+			var inherit = system is not null && !system.StartsWith("Files-", StringComparison.Ordinal) ? system : null;
+			var theme = pack.InstallAsSystemTheme(inherit);
+			IconMessage = ApplySystemIconTheme(theme)
+				? $"Installed and applied the \"{theme}\" icon theme for all apps."
+				: $"Installed the \"{theme}\" icon theme. Choose it in your desktop's appearance settings to use it in all apps.";
+		}
+		catch (Exception ex)
+		{
+			IconMessage = ex.Message;
+		}
+	}
+
+	private static bool ApplySystemIconTheme(string theme)
+	{
+		var desktop = (Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP") ?? string.Empty).ToUpperInvariant();
+		if (desktop.Contains("KDE", StringComparison.Ordinal))
+		{
+			foreach (var tool in new[] { "/usr/lib/x86_64-linux-gnu/libexec/plasma-changeicons", "/usr/lib/aarch64-linux-gnu/libexec/plasma-changeicons", "/usr/libexec/plasma-changeicons" })
+			{
+				if (File.Exists(tool) && LauncherService.RunAndRead(tool, theme) is not null)
+					return true;
+			}
+			return false;
+		}
+		if (desktop.Contains("XFCE", StringComparison.Ordinal))
+			return LauncherService.RunAndRead("xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-s", theme) is not null;
+		return LauncherService.RunAndRead("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", theme) is not null;
+	}
 
 	[ObservableProperty]
 	public partial bool UseSystemTitleBar { get; set; }

@@ -38,6 +38,7 @@ public sealed partial class SidebarViewModel : ObservableObject
 	public SidebarViewModel(bool watchMounts = true)
 	{
 		Rebuild();
+		Services.Icons.IconService.Changed += (_, _) => Rebuild();
 		if (watchMounts)
 		{
 			_timer = new DispatcherTimer(TimeSpan.FromSeconds(3), DispatcherPriority.Background, (_, _) => CheckMounts());
@@ -57,6 +58,30 @@ public sealed partial class SidebarViewModel : ObservableObject
 	];
 
 	public static List<string> PinnedPaths => SettingsService.Current.PinnedFolders ?? DefaultPinned();
+
+	/// <summary>Place key used to look up icons in icon themes and packs.</summary>
+	public static string PlaceKey(string? path)
+	{
+		if (path is null || path == XdgPaths.Home)
+			return "home";
+		if (path == TrashService.TrashUri)
+			return TrashService.Default.IsEmpty() ? "trash" : "trash-full";
+		if (path == XdgPaths.GetUserDir("DESKTOP"))
+			return "desktop";
+		if (path == XdgPaths.GetUserDir("DOWNLOAD"))
+			return "downloads";
+		if (path == XdgPaths.GetUserDir("DOCUMENTS"))
+			return "documents";
+		if (path == XdgPaths.GetUserDir("PICTURES"))
+			return "pictures";
+		if (path == XdgPaths.GetUserDir("MUSIC"))
+			return "music";
+		if (path == XdgPaths.GetUserDir("VIDEOS"))
+			return "videos";
+		if (path == "/")
+			return "drive";
+		return "folder";
+	}
 
 	public static (string Name, Symbol Icon, IBrush Brush) Describe(string path)
 	{
@@ -88,7 +113,7 @@ public sealed partial class SidebarViewModel : ObservableObject
 		var collapsed = Items.Where(i => i.IsHeader && !i.IsExpanded).Select(i => i.Section).ToHashSet();
 
 		Items.Clear();
-		Items.Add(new SidebarItem { Text = Loc.Get("Home", "Home"), Kind = SidebarItemKind.Home, Icon = Symbol.Home, IconBrush = HomeBrush });
+		Items.Add(new SidebarItem { Text = Loc.Get("Home", "Home"), Kind = SidebarItemKind.Home, Icon = Symbol.Home, IconBrush = HomeBrush, PlaceKey = "home" });
 
 		Items.Add(new SidebarItem { Text = Loc.Get("Pinned", "Pinned"), Kind = SidebarItemKind.Header, Section = SidebarSection.Pinned, IsExpanded = !collapsed.Contains(SidebarSection.Pinned) });
 		foreach (var path in PinnedPaths)
@@ -104,6 +129,7 @@ public sealed partial class SidebarViewModel : ObservableObject
 				IconBrush = brush,
 				Kind = path == TrashService.TrashUri ? SidebarItemKind.Trash : SidebarItemKind.Pinned,
 				Section = SidebarSection.Pinned,
+				PlaceKey = PlaceKey(path),
 			});
 		}
 
@@ -120,6 +146,7 @@ public sealed partial class SidebarViewModel : ObservableObject
 				IconBrush = DriveBrush,
 				Kind = SidebarItemKind.Drive,
 				Section = SidebarSection.Drives,
+				PlaceKey = d.IsRemovable ? "drive-removable" : "drive",
 				Drive = new DriveEntryInfo(d.MountPoint, d.Device, d.FsType, d.TotalBytes, d.FreeBytes, d.IsRemovable, d.SpaceText, d.UsedPercent, d.IsLowOnSpace),
 			});
 		}

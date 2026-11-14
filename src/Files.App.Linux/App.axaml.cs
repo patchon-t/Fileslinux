@@ -22,6 +22,7 @@ public partial class App : Application
 		Loc.Load(SettingsService.Current.Language);
 		ApplyTheme(SettingsService.Current.Theme);
 		ApplyMotion(SettingsService.Current.EnableAnimations);
+		Services.Icons.IconService.Apply(SettingsService.Current.IconStyle);
 
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{

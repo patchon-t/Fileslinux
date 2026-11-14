@@ -11,13 +11,20 @@ using FluentIcons.Common;
 
 namespace Files.App.Linux.ViewModels;
 
-public sealed record QuickAccessCard(string Name, string Path, Symbol Icon, IBrush Brush)
+public sealed record QuickAccessCard(string Name, string Path, Symbol Icon, IBrush Brush, IImage? CustomIcon = null)
 {
+	public bool HasCustomIcon => CustomIcon is not null;
+
+	public bool UsesBuiltinArt => CustomIcon is null;
+
 	/// <summary>Folders show the folder artwork with a small badge; the trash shows its own icon only.</summary>
-	public bool ShowBadge => Path != TrashService.TrashUri && Icon != Symbol.Folder;
+	public bool ShowBadge => CustomIcon is null && Path != TrashService.TrashUri && Icon != Symbol.Folder;
 }
 
-public sealed record DriveCard(string Name, string Path, Symbol Icon, string SpaceText, double UsedPercent, bool IsLowOnSpace, string FsType);
+public sealed record DriveCard(string Name, string Path, Symbol Icon, string SpaceText, double UsedPercent, bool IsLowOnSpace, string FsType, IImage? CustomIcon = null)
+{
+	public bool HasCustomIcon => CustomIcon is not null;
+}
 
 /// <summary>Home page widgets: Quick access, Drives, Recent files (as on Windows).</summary>
 public sealed partial class HomeViewModel : ObservableObject
@@ -39,14 +46,14 @@ public sealed partial class HomeViewModel : ObservableObject
 			if (path != TrashService.TrashUri && !Directory.Exists(path))
 				continue;
 			var (name, icon, brush) = SidebarViewModel.Describe(path);
-			QuickAccess.Add(new QuickAccessCard(name, path, icon, brush));
+			QuickAccess.Add(new QuickAccessCard(name, path, icon, brush, Services.Icons.IconService.GetPlaceIcon(SidebarViewModel.PlaceKey(path), 96)));
 		}
 
 		Drives.Clear();
 		foreach (var d in sidebar.Drives)
 		{
 			var icon = d.IsRoot ? Symbol.HardDrive : (d.IsRemovable ? Symbol.UsbStick : Symbol.Storage);
-			Drives.Add(new DriveCard(d.Name, d.MountPoint, icon, d.SpaceText, d.UsedPercent, d.IsLowOnSpace, d.FsType));
+			Drives.Add(new DriveCard(d.Name, d.MountPoint, icon, d.SpaceText, d.UsedPercent, d.IsLowOnSpace, d.FsType, Services.Icons.IconService.GetPlaceIcon(d.IsRemovable ? "drive-removable" : "drive", 64)));
 		}
 
 		_ = Task.Run(() =>

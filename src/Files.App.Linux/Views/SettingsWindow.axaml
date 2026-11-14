@@ -161,6 +161,59 @@
 							</Grid>
 						</Border>
 						<Border Classes="setting">
+							<StackPanel Spacing="10">
+								<Grid ColumnDefinitions="Auto,*,Auto">
+									<ic:SymbolIcon Symbol="Icons" />
+									<StackPanel Grid.Column="1" VerticalAlignment="Center">
+										<TextBlock Text="{v:Loc Icons, Icons}" />
+										<TextBlock
+											Classes="secondary"
+											FontSize="12"
+											Text="{v:Loc IconsDescription, Use the icons of your desktop or any installed icon theme or your own icon pack}"
+											TextWrapping="Wrap" />
+									</StackPanel>
+									<ComboBox
+										x:Name="IconStyleBox"
+										Grid.Column="2"
+										MinWidth="240"
+										ItemsSource="{Binding IconStyles}"
+										SelectedItem="{Binding SelectedIconStyle}" />
+								</Grid>
+								<WrapPanel Margin="36,0,0,0" Orientation="Horizontal">
+									<Button
+										x:Name="ImportIconPackButton"
+										Margin="0,0,8,6"
+										Content="{v:Loc ImportIconPack, Import icon pack...}" />
+									<Button
+										Margin="0,0,8,6"
+										Command="{Binding CreateExampleIconPackCommand}"
+										Content="{v:Loc CreateExampleIconPack, Create example pack}" />
+									<Button
+										Margin="0,0,8,6"
+										Command="{Binding OpenIconPacksFolderCommand}"
+										Content="{v:Loc OpenIconPacksFolder, Open icon packs folder}" />
+									<Button
+										Margin="0,0,8,6"
+										Command="{Binding ReloadIconsCommand}"
+										Content="{v:Loc ReloadIcons, Reload}" />
+									<Button
+										Margin="0,0,8,6"
+										Classes="accent"
+										Command="{Binding UseIconPackForAllAppsCommand}"
+										Content="{v:Loc UseIconPackForAllApps, Use for all apps}"
+										IsVisible="{Binding IsPackSelected}"
+										ToolTip.Tip="{v:Loc UseIconPackForAllAppsTip, Installs this pack as a system icon theme so other apps can use it too}" />
+								</WrapPanel>
+								<TextBlock
+									Margin="36,0,0,0"
+									Classes="secondary"
+									FontSize="12"
+									IsVisible="{Binding IconMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+									Text="{Binding IconMessage}"
+									TextWrapping="Wrap" />
+							</StackPanel>
+						</Border>
+						<Border Classes="setting">
 							<Grid ColumnDefinitions="Auto,*,Auto">
 								<ic:SymbolIcon Symbol="Window" />
 								<StackPanel Grid.Column="1" VerticalAlignment="Center">

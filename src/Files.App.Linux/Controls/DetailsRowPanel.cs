@@ -16,7 +16,20 @@ public static class DetailsColumns
 	public const int Size = 4;
 	public const int Count = 5;
 
-	private static readonly double[] Widths = [320, 220, 170, 150, 100];
+	private static readonly double[] Widths = Load();
+
+	private static double[] Load()
+	{
+		var saved = Services.SettingsService.Current.DetailsColumnWidths;
+		return saved is { Length: Count } ? saved.Select(w => Math.Clamp(w, 60, 1200)).ToArray() : [320, 220, 170, 150, 100];
+	}
+
+	/// <summary>Remembers the column widths (called when a resize ends).</summary>
+	public static void Save()
+	{
+		Services.SettingsService.Current.DetailsColumnWidths = [.. Widths];
+		Services.SettingsService.Save();
+	}
 
 	public static bool ShowLocation { get; private set; }
 

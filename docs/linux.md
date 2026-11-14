@@ -55,6 +55,7 @@ Set `FILES_SCREENSHOT_DIR=/some/folder` when running the tests to save screensho
 | Properties | Size (with folder contents count), dates, symlink target, owner/group, editable permissions |
 | Status center | Progress for copy/move/delete/compress/extract, with cancel |
 | Animations | Windows (WinUI) motion: folder contents and Home widgets rise in, the sidebar slides, dialogs scale in, menus slide down, hover colors fade. Same timings and curves as Windows; can be turned off. See [Animations reference](linux-animations.md) |
+| Icons | Files' Fluent icons, your desktop's icon theme, any installed icon theme (Papirus, Adwaita…), or your own icon pack (one `icons.json` file). A pack can be imported from a `.zip` and installed as a system icon theme for all apps. See [Custom icons](linux-icons.md) |
 | Settings | Theme (system/light/dark), animations on/off, language (all Windows translations), startup behavior, default layout, hidden files, file extensions, thumbnails, delete confirmation, folders first, terminal command |
 
 ### Keyboard shortcuts

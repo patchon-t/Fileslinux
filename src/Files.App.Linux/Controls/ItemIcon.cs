@@ -9,6 +9,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Files.App.Linux.Helpers;
 using Files.App.Linux.Models;
+using Files.App.Linux.Services.Icons;
 using FluentIcons.Avalonia;
 using FluentIcons.Common;
 using AvPath = Avalonia.Controls.Shapes.Path;
@@ -81,6 +82,7 @@ public sealed class ItemIcon : ContentControl
 	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
 	{
 		base.OnDetachedFromVisualTree(e);
+		IconService.Changed -= OnIconStyleChanged;
 		if (_subscribed is not null)
 			_subscribed.PropertyChanged -= OnItemPropertyChanged;
 		_subscribed = null;
@@ -89,12 +91,15 @@ public sealed class ItemIcon : ContentControl
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
 	{
 		base.OnAttachedToVisualTree(e);
+		IconService.Changed += OnIconStyleChanged;
 		if (_subscribed is null && Item is not null)
 		{
 			_subscribed = Item;
 			_subscribed.PropertyChanged += OnItemPropertyChanged;
-			Rebuild();
 		}
+		// The icon style may have changed while this icon was off screen.
+		if (Item is not null)
+			Rebuild();
 	}
 
 	private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -135,6 +140,13 @@ public sealed class ItemIcon : ContentControl
 			return;
 		}
 
+		// Icon theme or icon pack chosen in Settings (null = Files' own icons).
+		if (IconService.GetFileIcon(item, PixelSizeFor(size)) is { } custom)
+		{
+			Content = new Image { Source = custom, Width = size, Height = size, Stretch = Stretch.Uniform };
+			return;
+		}
+
 		if (item.IsDirectory)
 		{
 			Content = BuildFolder(size, item.IsSymlink);
@@ -155,6 +167,11 @@ public sealed class ItemIcon : ContentControl
 
 		Content = BuildPage(size, item);
 	}
+
+	/// <summary>Icons are requested at twice their size so they stay sharp on high-DPI screens.</summary>
+	internal static int PixelSizeFor(double size) => (int)Math.Clamp(Math.Ceiling(size * 2), 16, 256);
+
+	private void OnIconStyleChanged(object? sender, EventArgs e) => Rebuild();
 
 	public static Control BuildFolder(double size, bool isLink = false)
 	{

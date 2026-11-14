@@ -25,7 +25,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
 		IsInfoPaneOpen = SettingsService.Current.ShowInfoPane;
 		SettingsService.Changed += OnSettingsChanged;
 		FolderViewChanged += OnAnyFolderViewChanged;
+		Services.Icons.IconService.Changed += OnIconsChanged;
 	}
+
+	private void OnIconsChanged(object? sender, EventArgs e) => OnPinnedChanged();
 
 	private void OnSettingsChanged(object? sender, EventArgs e)
 	{
@@ -40,6 +43,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 	{
 		SettingsService.Changed -= OnSettingsChanged;
 		FolderViewChanged -= OnAnyFolderViewChanged;
+		Services.Icons.IconService.Changed -= OnIconsChanged;
 	}
 
 	public IDialogService Dialogs { get; set; } = new NullDialogService();

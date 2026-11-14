@@ -34,6 +34,7 @@
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="FluentIcons.Avalonia" />
+    <PackageReference Include="Svg.Skia" />
   </ItemGroup>
 
   <ItemGroup>

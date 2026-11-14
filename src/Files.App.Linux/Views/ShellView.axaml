@@ -200,7 +200,7 @@
 		<Grid
 			x:Name="BodyGrid"
 			Grid.Row="1"
-			ColumnDefinitions="*,Auto,Auto">
+			ColumnDefinitions="*,Auto,0">
 			<Panel x:Name="LayoutHost" Background="Transparent">
 
 				<!--  Home  -->
@@ -446,7 +446,6 @@
 			<v:InfoPaneView
 				x:Name="InfoPane"
 				Grid.Column="2"
-				Width="300"
 				DataContext="{Binding Preview}"
 				IsVisible="{Binding $parent[v:ShellView].((vm:ShellTabViewModel)DataContext).Main.IsInfoPaneOpen, FallbackValue=False}" />
 		</Grid>

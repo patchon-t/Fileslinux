@@ -67,5 +67,7 @@
     <PackageVersion Include="Avalonia.Headless" Version="11.3.22" />
     <PackageVersion Include="Avalonia.Skia" Version="11.3.22" />
     <PackageVersion Include="FluentIcons.Avalonia" Version="2.0.321" />
+    <!-- Renders SVG icons from icon themes and icon packs (matches Avalonia 11.3's SkiaSharp 2.88) -->
+    <PackageVersion Include="Svg.Skia" Version="2.0.0.8" />
   </ItemGroup>
 </Project>

@@ -40,6 +40,14 @@ public sealed partial class SidebarItem : ObservableObject
 
 	public DriveEntryInfo? Drive { get; init; }
 
+	/// <summary>Place key for icon themes and packs (home, desktop, ..., trash, drive, folder).</summary>
+	public string? PlaceKey { get; init; }
+
+	/// <summary>Icon from the chosen icon theme or pack; null shows the built-in Fluent icon.</summary>
+	public Avalonia.Media.IImage? CustomIcon => PlaceKey is null ? null : Services.Icons.IconService.GetPlaceIcon(PlaceKey, 32);
+
+	public bool HasCustomIcon => CustomIcon is not null;
+
 	public bool IsHeader => Kind == SidebarItemKind.Header;
 
 	public bool IsNavigable => Kind != SidebarItemKind.Header;

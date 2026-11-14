@@ -55,7 +55,8 @@ public partial class ShellView : UserControl
 		}
 
 		DetailsList.AddHandler(ScrollViewer.ScrollChangedEvent, (_, _) => SyncHeaderScroll());
-		DetailsColumns.Changed += (_, _) => BuildHeader();
+		// Column widths: the header and rows re-measure themselves (DetailsRowPanel). Rebuilding the header here
+		// would destroy the grip being dragged and stop the resize after the first pixel.
 		// Tooltips show the keyboard shortcut, like the Windows toolbar ("Copy (Ctrl+C)").
 		foreach (var (button, key, fallback, shortcut) in new (Button, string, string, string)[]
 		{
@@ -74,12 +75,12 @@ public partial class ShellView : UserControl
 		SortButton.Click += (_, _) => ShowMenu(SortButton, BuildSortMenu);
 		LayoutButton.Click += (_, _) => ShowMenu(LayoutButton, BuildLayoutMenu);
 		MoreButton.Click += (_, _) => ShowMenu(MoreButton, BuildMoreMenu);
+		// The details pane lives in a sized column so the splitter can resize it.
 		InfoSplitter.DragCompleted += (_, _) =>
 		{
-			SettingsService.Current.InfoPaneWidth = InfoPane.Bounds.Width;
+			SettingsService.Current.InfoPaneWidth = BodyGrid.ColumnDefinitions[2].ActualWidth;
 			SettingsService.Save();
 		};
-		InfoPane.Width = SettingsService.Current.InfoPaneWidth;
 		BuildHeader();
 	}
 
@@ -115,6 +116,7 @@ public partial class ShellView : UserControl
 				_main = _tab.Main;
 				_main.PropertyChanged += OnMainPropertyChanged;
 			}
+			UpdateInfoPaneColumn();
 			Dispatcher.UIThread.Post(PlayEntranceAfterLayout, DispatcherPriority.Background);
 			DetailsColumns.SetShowLocation(_tab.ShowLocationColumn);
 			BuildHeader();
@@ -122,8 +124,27 @@ public partial class ShellView : UserControl
 		}
 	}
 
+	/// <summary>Opens or closes the details pane column (resizable with the splitter, width remembered).</summary>
+	private void UpdateInfoPaneColumn()
+	{
+		var column = BodyGrid.ColumnDefinitions[2];
+		if (_main?.IsInfoPaneOpen == true)
+		{
+			column.MinWidth = 200;
+			column.MaxWidth = 900;
+			column.Width = new GridLength(Math.Clamp(SettingsService.Current.InfoPaneWidth, 200, 900));
+		}
+		else
+		{
+			column.MinWidth = 0;
+			column.Width = new GridLength(0);
+		}
+	}
+
 	private void OnMainPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
 	{
+		if (e.PropertyName == nameof(MainWindowViewModel.IsInfoPaneOpen))
+			UpdateInfoPaneColumn();
 		// The details pane slides in from the right when opened.
 		if (e.PropertyName == nameof(MainWindowViewModel.IsInfoPaneOpen) && _main?.IsInfoPaneOpen == true)
 			Dispatcher.UIThread.Post(() => _ = Motion.SlideInAsync(InfoPane, 40), DispatcherPriority.Background);
@@ -650,8 +671,11 @@ public partial class ShellView : UserControl
 			}),
 		};
 		thumb.DragDelta += (_, e) => DetailsColumns.Set(column, DetailsColumns.Get(column) + e.Vector.X);
+		thumb.DragCompleted += (_, _) => DetailsColumns.Save();
 
-		var cell = new Panel { Height = 32 };
+		// Clip each cell to its column: a hidden column (width 0, e.g. Location) would otherwise leave its
+		// resize grip on top of the neighbouring column's grip and swallow every drag.
+		var cell = new Panel { Height = 32, ClipToBounds = true };
 		cell.Children.Add(button);
 		cell.Children.Add(thumb);
 		DetailsHeader.Children.Add(cell);

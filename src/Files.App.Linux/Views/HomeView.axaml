@@ -60,7 +60,8 @@
 								</Button.ContextMenu>
 								<StackPanel VerticalAlignment="Center" Spacing="10">
 									<Panel Width="48" Height="48" HorizontalAlignment="Center">
-										<ContentControl Content="{Binding Converter={x:Static v:HomeView.FolderIconConverter}}" />
+										<ContentControl Content="{Binding Converter={x:Static v:HomeView.FolderIconConverter}}" IsVisible="{Binding UsesBuiltinArt}" />
+										<Image IsVisible="{Binding HasCustomIcon}" Source="{Binding CustomIcon}" />
 										<ic:SymbolIcon
 											Margin="0,10,0,0"
 											HorizontalAlignment="Center"
@@ -109,12 +110,18 @@
 								Click="OnDriveClick"
 								ToolTip.Tip="{Binding Path}">
 								<Grid ColumnDefinitions="Auto,*">
-									<ic:SymbolIcon
-										Margin="4,0,14,0"
-										VerticalAlignment="Center"
-										FontSize="32"
-										Foreground="{DynamicResource App.Theme.SecondaryTextBrush}"
-										Symbol="{Binding Icon}" />
+									<Panel Margin="4,0,14,0" VerticalAlignment="Center">
+										<ic:SymbolIcon
+											FontSize="32"
+											Foreground="{DynamicResource App.Theme.SecondaryTextBrush}"
+											IsVisible="{Binding !HasCustomIcon}"
+											Symbol="{Binding Icon}" />
+										<Image
+											Width="36"
+											Height="36"
+											IsVisible="{Binding HasCustomIcon}"
+											Source="{Binding CustomIcon}" />
+									</Panel>
 									<StackPanel
 										Grid.Column="1"
 										VerticalAlignment="Center"

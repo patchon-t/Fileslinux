@@ -21,9 +21,11 @@ public sealed record QuickAccessCard(string Name, string Path, Symbol Icon, IBru
 	public bool ShowBadge => CustomIcon is null && Path != TrashService.TrashUri && Icon != Symbol.Folder;
 }
 
-public sealed record DriveCard(string Name, string Path, Symbol Icon, string SpaceText, double UsedPercent, bool IsLowOnSpace, string FsType, IImage? CustomIcon = null)
+public sealed record DriveCard(string Name, string Path, Symbol Icon, string SpaceText, double UsedPercent, bool IsLowOnSpace, string FsType, IImage? CustomIcon = null, bool IsRoot = false, bool IsRemovable = false)
 {
 	public bool HasCustomIcon => CustomIcon is not null;
+
+	public bool UsesBuiltinArt => CustomIcon is null;
 }
 
 /// <summary>Home page widgets: Quick access, Drives, Recent files (as on Windows).</summary>
@@ -53,7 +55,7 @@ public sealed partial class HomeViewModel : ObservableObject
 		foreach (var d in sidebar.Drives)
 		{
 			var icon = d.IsRoot ? Symbol.HardDrive : (d.IsRemovable ? Symbol.UsbStick : Symbol.Storage);
-			Drives.Add(new DriveCard(d.Name, d.MountPoint, icon, d.SpaceText, d.UsedPercent, d.IsLowOnSpace, d.FsType, Services.Icons.IconService.GetPlaceIcon(d.IsRemovable ? "drive-removable" : "drive", 64)));
+			Drives.Add(new DriveCard(d.Name, d.MountPoint, icon, d.SpaceText, d.UsedPercent, d.IsLowOnSpace, d.FsType, Services.Icons.IconService.GetPlaceIcon(d.IsRemovable ? "drive-removable" : "drive", 64), d.IsRoot, d.IsRemovable));
 		}
 
 		_ = Task.Run(() =>

@@ -48,6 +48,12 @@ public sealed partial class SidebarItem : ObservableObject
 
 	public bool HasCustomIcon => CustomIcon is not null;
 
+	/// <summary>Drives show the Windows-style drive picture (unless an icon theme or pack is used).</summary>
+	public bool ShowsDriveArt => Kind == SidebarItemKind.Drive && !HasCustomIcon;
+
+	/// <summary>Everything else shows its Fluent icon.</summary>
+	public bool ShowsSymbol => !HasCustomIcon && Kind != SidebarItemKind.Drive;
+
 	public bool IsHeader => Kind == SidebarItemKind.Header;
 
 	public bool IsNavigable => Kind != SidebarItemKind.Header;

@@ -257,6 +257,21 @@
 		<Setter Property="Padding" Value="11,7" />
 	</Style>
 
+	<!--  Drive usage bars, like "Devices and drives" in Windows: thick, flat, blue; red when almost full  -->
+	<Style Selector="ProgressBar.drive">
+		<Setter Property="Height" Value="16" />
+		<Setter Property="MinHeight" Value="16" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="Background" Value="{DynamicResource App.Theme.DriveTrackBrush}" />
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.DriveFillBrush}" />
+	</Style>
+	<Style Selector="ProgressBar.drive.low">
+		<Setter Property="Foreground" Value="{DynamicResource App.Theme.DriveLowBrush}" />
+	</Style>
+	<Style Selector="ProgressBar.drive /template/ Border">
+		<Setter Property="CornerRadius" Value="0" />
+	</Style>
+
 	<!--  Cards on the Home page  -->
 	<Style Selector="Button.card">
 		<Setter Property="Background" Value="{DynamicResource App.Theme.CardBrush}" />

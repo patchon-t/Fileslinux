@@ -3,6 +3,7 @@
 	x:Class="Files.App.Linux.Views.MainWindow"
 	xmlns="https://github.com/avaloniaui"
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:c="using:Files.App.Linux.Controls"
 	xmlns:ic="using:FluentIcons.Avalonia"
 	xmlns:m="using:Files.App.Linux.Models"
 	xmlns:s="using:Files.App.Linux.Services"
@@ -430,8 +431,13 @@
 										FontSize="16"
 										Foreground="{Binding IconBrush}"
 										IconVariant="Filled"
-										IsVisible="{Binding !HasCustomIcon}"
+										IsVisible="{Binding ShowsSymbol}"
 										Symbol="{Binding Icon}" />
+									<ContentControl
+										Grid.Column="1"
+										Margin="6,0,9,0"
+										Content="{Binding Converter={x:Static c:DriveArt.Converter}, ConverterParameter=22}"
+										IsVisible="{Binding ShowsDriveArt}" />
 									<Image
 										Grid.Column="1"
 										Width="18"

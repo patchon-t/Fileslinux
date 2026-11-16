@@ -35,13 +35,40 @@ public partial class MainWindow : Window
 		AddHandler(TextInputEvent, OnWindowTextInput, RoutingStrategies.Bubble);
 		AddHandler(PointerPressedEvent, OnWindowPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
 
+		// Clicking anywhere in the address bar except on a folder name starts editing, as on Windows.
 		BreadcrumbHost.PointerPressed += (_, e) =>
 		{
-			if (e.Source == BreadcrumbHost || e.Source is ScrollViewer || e.Source is ItemsControl || e.Source is StackPanel)
+			if (e.GetCurrentPoint(BreadcrumbHost).Properties.IsLeftButtonPressed && (e.Source as Visual)?.FindAncestorOfType<Button>(includeSelf: true) is null)
+			{
 				BeginEditPath();
+				e.Handled = true;
+			}
 		};
-		PathBox.KeyDown += OnPathBoxKeyDown;
-		PathBox.LostFocus += (_, _) => EndEditPath();
+		PathBox.TextChanged += (_, _) => UpdateSuggestions();
+		BreadcrumbHost.ContextRequested += (_, e) =>
+		{
+			// Right-click on the address bar: Edit address / Copy address, as in Windows Explorer.
+			e.Handled = true;
+			var menu = new ContextMenu();
+			menu.Items.Add(Action(Loc.Get("EditAddress", "Edit address"), Symbol.Rename, BeginEditPath, "Ctrl+L"));
+			menu.Items.Add(Action(Loc.Get("CopyAddress", "Copy address"), Symbol.Copy, () => _ = ClipboardService.SetTextAsync(CurrentPathText() is { Length: > 0 } p ? p : XdgPaths.Home)));
+			menu.Items.Add(Separator());
+			menu.Items.Add(Action(Loc.Get("OpenInTerminal", "Open in Terminal"), Symbol.WindowConsole, () => ExecuteAddress("cmd")));
+			menu.Open(BreadcrumbHost);
+		};
+		SuggestionList.AddHandler(PointerReleasedEvent, (_, e) =>
+		{
+			if ((e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext is AddressSuggestion pick)
+				AcceptSuggestion(pick);
+		}, RoutingStrategies.Bubble, handledEventsToo: true);
+		// Tunnel: the text box would otherwise use Up/Down itself before we can move through the suggestions.
+		PathBox.AddHandler(KeyDownEvent, OnPathBoxKeyDown, RoutingStrategies.Tunnel);
+		PathBox.LostFocus += (_, _) =>
+		{
+			// The error dialog takes focus but should come back to the box afterwards; anything else ends editing.
+			if (!DialogLayer.IsVisible)
+				EndEditPath();
+		};
 		SearchBox.KeyDown += OnSearchBoxKeyDown;
 
 		SidebarList.AddHandler(PointerReleasedEvent, OnSidebarPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -376,6 +403,7 @@ public partial class MainWindow : Window
 
 	private void EndEditPath()
 	{
+		SuggestionPopup.IsOpen = false;
 		PathBox.IsVisible = false;
 		BreadcrumbHost.IsVisible = true;
 		Dispatcher.UIThread.Post(() => BreadcrumbScroller.ScrollToEnd(), DispatcherPriority.Background);
@@ -383,24 +411,141 @@ public partial class MainWindow : Window
 
 	private void OnPathBoxKeyDown(object? sender, KeyEventArgs e)
 	{
-		if (e.Key == Key.Enter)
+		var suggestions = SuggestionPopup.IsOpen ? SuggestionList.ItemCount : 0;
+		switch (e.Key)
 		{
-			var text = PathBox.Text ?? string.Empty;
-			EndEditPath();
-			Tab?.NavigateTo(text.Length == 0 ? null : text);
-			e.Handled = true;
+			case Key.Down when suggestions > 0:
+				SuggestionList.SelectedIndex = Math.Min(SuggestionList.SelectedIndex + 1, suggestions - 1);
+				SuggestionList.ScrollIntoView(SuggestionList.SelectedIndex);
+				e.Handled = true;
+				break;
+			case Key.Up when suggestions > 0:
+				SuggestionList.SelectedIndex = Math.Max(SuggestionList.SelectedIndex - 1, -1);
+				e.Handled = true;
+				break;
+			case Key.Enter:
+				if (SuggestionPopup.IsOpen && SuggestionList.SelectedItem is AddressSuggestion pick)
+					AcceptSuggestion(pick);
+				else
+					ExecuteAddress(PathBox.Text ?? string.Empty);
+				e.Handled = true;
+				break;
+			case Key.Escape when SuggestionPopup.IsOpen:
+				SuggestionPopup.IsOpen = false;
+				e.Handled = true;
+				break;
+			case Key.Escape:
+				EndEditPath();
+				Shell.FocusActiveList();
+				e.Handled = true;
+				break;
+			case Key.Tab:
+				if (SuggestionPopup.IsOpen && (SuggestionList.SelectedItem ?? SuggestionList.Items.OfType<object>().FirstOrDefault()) is AddressSuggestion first)
+					SetPathText(first.Text);
+				else
+					CompletePath();
+				e.Handled = true;
+				break;
 		}
-		else if (e.Key == Key.Escape)
+	}
+
+	private bool _settingPathText;
+
+	private void SetPathText(string text)
+	{
+		_settingPathText = true;
+		PathBox.Text = text;
+		PathBox.CaretIndex = text.Length;
+		_settingPathText = false;
+		UpdateSuggestions();
+	}
+
+	/// <summary>Shows matching folders, files and commands under the address bar while typing.</summary>
+	private void UpdateSuggestions()
+	{
+		if (_settingPathText && !PathBox.IsVisible)
+			return;
+		var text = PathBox.Text ?? string.Empty;
+		if (!PathBox.IsVisible || text.Length == 0 || text == CurrentPathText())
 		{
-			EndEditPath();
+			SuggestionPopup.IsOpen = false;
+			return;
+		}
+		var folder = Tab is { IsFolder: true } t ? t.CurrentPath : XdgPaths.Home;
+		var items = AddressBarService.Default.Suggest(text, folder, SettingsService.Current.ShowHiddenItems);
+		SuggestionList.ItemsSource = items;
+		SuggestionList.SelectedIndex = -1;
+		SuggestionPopup.MinWidth = Omnibar.Bounds.Width;
+		SuggestionPopup.IsOpen = items.Count > 0;
+	}
+
+	/// <summary>The text the address bar shows for the current location when editing starts.</summary>
+	private string CurrentPathText() => Tab is null ? string.Empty : Tab.IsHome ? string.Empty : Tab.IsTrash ? TrashService.TrashUri : Tab.CurrentPath ?? string.Empty;
+
+	/// <summary>Clicking a suggestion (or Enter on it) goes there / runs it. Tab fills it in instead.</summary>
+	private void AcceptSuggestion(AddressSuggestion pick) => ExecuteAddress(pick.Text);
+
+	/// <summary>
+	/// Runs what was typed, like the Windows address bar: go to a folder, open a file, open a terminal here for
+	/// "cmd"/"terminal", start a program in this folder, or run a command-line tool in a terminal.
+	/// </summary>
+	public void ExecuteAddress(string text)
+	{
+		var tab = Tab;
+		if (tab is null || _vm is null)
+			return;
+		var folder = tab.IsFolder ? tab.CurrentPath : XdgPaths.Home;
+		var action = AddressBarService.Default.Resolve(text, folder);
+		LastAddressAction = action;
+		try
+		{
+			switch (action.Kind)
+			{
+				case AddressActionKind.Navigate:
+					EndEditPath();
+					tab.NavigateTo(action.Path ?? (text.Trim().Length == 0 || text.Trim().Equals("home", StringComparison.OrdinalIgnoreCase) ? null : text));
+					break;
+				case AddressActionKind.OpenFile:
+					EndEditPath();
+					LauncherService.OpenWithDefault(action.Path!);
+					break;
+				case AddressActionKind.OpenTerminal:
+					EndEditPath();
+					LauncherService.OpenInTerminal(action.Path!);
+					break;
+				case AddressActionKind.Run:
+					EndEditPath();
+					LauncherService.Run(action.Command!, action.Path!);
+					break;
+				case AddressActionKind.RunInTerminal:
+					EndEditPath();
+					LauncherService.RunInTerminal(action.Command!, action.Path!);
+					break;
+				default:
+					SuggestionPopup.IsOpen = false;
+					_ = ShowAddressErrorAsync(text, string.Format(Loc.Get("AddressNotFound", "Files can't find \"{0}\". Check the spelling and try again."), text.Trim()));
+					return;
+			}
 			Shell.FocusActiveList();
-			e.Handled = true;
 		}
-		else if (e.Key == Key.Tab)
+		catch (Exception ex)
 		{
-			CompletePath();
-			e.Handled = true;
+			_ = ShowAddressErrorAsync(text, ex.Message);
 		}
+	}
+
+	/// <summary>What the last Enter in the address bar did (used by tests).</summary>
+	internal AddressAction? LastAddressAction { get; private set; }
+
+	private async Task ShowAddressErrorAsync(string text, string message)
+	{
+		if (_vm is null)
+			return;
+		await _vm.Dialogs.ShowErrorAsync("Files", message);
+		// Back to the address bar with the text, so it can be corrected.
+		BeginEditPath();
+		SetPathText(text);
+		PathBox.SelectAll();
 	}
 
 	/// <summary>Tab-completes a folder name in the path box.</summary>

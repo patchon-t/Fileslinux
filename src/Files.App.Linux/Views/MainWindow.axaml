@@ -5,6 +5,7 @@
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 	xmlns:ic="using:FluentIcons.Avalonia"
 	xmlns:m="using:Files.App.Linux.Models"
+	xmlns:s="using:Files.App.Linux.Services"
 	xmlns:v="using:Files.App.Linux.Views"
 	xmlns:vm="using:Files.App.Linux.ViewModels"
 	Title="{Binding WindowTitle}"
@@ -203,7 +204,7 @@
 						<Grid
 							x:Name="BreadcrumbHost"
 							Background="Transparent"
-							ColumnDefinitions="Auto,*">
+							ColumnDefinitions="Auto,*,48">
 							<ic:SymbolIcon
 								Margin="10,0,4,0"
 								FontSize="16"
@@ -212,6 +213,7 @@
 							<ScrollViewer
 								x:Name="BreadcrumbScroller"
 								Grid.Column="1"
+								HorizontalAlignment="Left"
 								HorizontalScrollBarVisibility="Hidden"
 								VerticalScrollBarVisibility="Disabled">
 								<ItemsControl x:Name="Breadcrumbs" ItemsSource="{Binding SelectedTab.Breadcrumbs, FallbackValue={x:Null}}">
@@ -253,9 +255,63 @@
 							Background="Transparent"
 							BorderThickness="0"
 							IsVisible="False"
-							Watermark="{v:Loc OmnibarPathModeTextPlaceholder, Enter a path to navigate to...}" />
+							Watermark="{v:Loc AddressBarPlaceholder, Type a path or a command such as cmd}" />
 					</Panel>
 				</Border>
+
+				<!--  Suggestions while typing in the address bar (folders, files, commands)  -->
+				<Popup
+					x:Name="SuggestionPopup"
+					Grid.Column="1"
+					IsLightDismissEnabled="False"
+					Placement="BottomEdgeAlignedLeft"
+					PlacementTarget="{Binding #Omnibar}"
+					VerticalOffset="4">
+					<Border
+						Padding="4"
+						Background="{DynamicResource App.Theme.DialogBrush}"
+						BorderBrush="{DynamicResource App.Theme.CardBorderBrush}"
+						BorderThickness="1"
+						BoxShadow="0 4 16 0 #30000000"
+						CornerRadius="8">
+						<ListBox
+							x:Name="SuggestionList"
+							MaxHeight="320"
+							Classes="subtle"
+							Focusable="False">
+							<ListBox.Styles>
+								<Style Selector="ListBoxItem">
+									<Setter Property="Focusable" Value="False" />
+								</Style>
+							</ListBox.Styles>
+							<ListBox.ItemTemplate>
+								<DataTemplate x:DataType="s:AddressSuggestion">
+									<Grid Height="32" Margin="8,0" Background="Transparent" ColumnDefinitions="Auto,*,Auto">
+										<ic:SymbolIcon
+											Margin="0,0,10,0"
+											FontSize="16"
+											Foreground="{DynamicResource App.Theme.IconBaseBrush}"
+											Symbol="{Binding Icon}" />
+										<TextBlock
+											Grid.Column="1"
+											VerticalAlignment="Center"
+											FontSize="13"
+											Text="{Binding Display}"
+											TextTrimming="CharacterEllipsis" />
+										<TextBlock
+											Grid.Column="2"
+											Margin="12,0,0,0"
+											VerticalAlignment="Center"
+											Classes="secondary"
+											FontSize="12"
+											IsVisible="{Binding HasDetail}"
+											Text="{Binding Detail}" />
+									</Grid>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</Border>
+				</Popup>
 
 				<!--  Search  -->
 				<TextBox

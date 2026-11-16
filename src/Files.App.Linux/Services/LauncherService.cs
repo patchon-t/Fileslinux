@@ -13,26 +13,124 @@ public static class LauncherService
 {
 	public static void OpenWithDefault(string path) => Start("xdg-open", path);
 
-	public static void OpenInTerminal(string folder)
+	private static readonly string[] KnownTerminals = ["x-terminal-emulator", "gnome-terminal", "kgx", "konsole", "xfce4-terminal", "mate-terminal", "tilix", "alacritty", "kitty", "foot", "xterm"];
+
+	/// <summary>The terminal to use: the one set in Settings, else Debian's x-terminal-emulator, else the first one installed.</summary>
+	internal static List<string>? FindTerminal()
 	{
 		var custom = SettingsService.Current.TerminalCommand;
 		if (!string.IsNullOrWhiteSpace(custom))
-		{
-			var parts = SplitCommand(custom);
-			StartIn(folder, parts[0], [.. parts.Skip(1)]);
-			return;
-		}
-
-		// Debian provides x-terminal-emulator through the alternatives system.
-		foreach (var term in new[] { "x-terminal-emulator", "gnome-terminal", "kgx", "konsole", "xfce4-terminal", "mate-terminal", "tilix", "alacritty", "kitty", "foot", "xterm" })
+			return SplitCommand(custom);
+		foreach (var term in KnownTerminals)
 		{
 			if (FindInPath(term) is not null)
+				return [term];
+		}
+		return null;
+	}
+
+	public static void OpenInTerminal(string folder)
+	{
+		var terminal = FindTerminal() ?? throw new InvalidOperationException("No terminal emulator was found. Set one in Settings.");
+		StartIn(folder, terminal[0], [.. terminal.Skip(1)]);
+	}
+
+	/// <summary>
+	/// Arguments that make <paramref name="terminal"/> run <paramref name="command"/>. Terminals differ:
+	/// GNOME Terminal and Console take "--", XFCE and MATE take "-x", kitty and foot take the command directly,
+	/// and the rest (x-terminal-emulator, Konsole, xterm, Alacritty, Tilix) take "-e".
+	/// </summary>
+	internal static List<string> TerminalArguments(string terminal, IReadOnlyList<string> command)
+	{
+		var name = Path.GetFileName(terminal);
+		var args = new List<string>();
+		switch (name)
+		{
+			case "gnome-terminal":
+			case "kgx":
+			case "ptyxis":
+				args.Add("--");
+				args.AddRange(command);
+				break;
+			case "xfce4-terminal":
+			case "mate-terminal":
+				args.Add("-x");
+				args.AddRange(command);
+				break;
+			case "kitty":
+			case "foot":
+			case "wezterm":
+				args.AddRange(command);
+				break;
+			default:
+				args.Add("-e");
+				args.AddRange(command);
+				break;
+		}
+		return args;
+	}
+
+	/// <summary>Quotes text for sh: 'it'\''s'.</summary>
+	internal static string ShellQuote(string text) => "'" + text.Replace("'", "'\\''") + "'";
+
+	/// <summary>
+	/// Runs a command-line program in a new terminal window in <paramref name="folder"/>. With
+	/// <paramref name="keepOpen"/>, the terminal stays open afterwards with a shell, so the output can be read.
+	/// </summary>
+	public static void RunInTerminal(IReadOnlyList<string> command, string folder, bool keepOpen = true)
+	{
+		var terminal = FindTerminal() ?? throw new InvalidOperationException("No terminal emulator was found. Set one in Settings.");
+		var script = string.Join(" ", command.Select(ShellQuote));
+		if (keepOpen)
+			script += "; exec \"${SHELL:-sh}\"";
+		var args = terminal.Skip(1).ToList();
+		args.AddRange(TerminalArguments(terminal[0], ["sh", "-c", script]));
+		StartIn(folder, terminal[0], [.. args]);
+	}
+
+	/// <summary>Starts a program in <paramref name="folder"/> (its working directory), like running it from that folder.</summary>
+	public static void Run(IReadOnlyList<string> command, string folder) => StartIn(folder, command[0], [.. command.Skip(1)]);
+
+	/// <summary>
+	/// True for graphical programs: an installed .desktop entry runs this executable and doesn't need a terminal.
+	/// Command-line tools (ls, htop, nano...) return false and are run in a terminal instead.
+	/// </summary>
+	public static bool IsDesktopApp(string executable)
+	{
+		var name = Path.GetFileName(executable);
+		foreach (var app in GetInstalledApps())
+		{
+			var exec = SplitCommand(app.Exec);
+			if (exec.Count == 0)
+				continue;
+			// Skip launchers such as "env VAR=1 program" to find the real program.
+			var program = exec.FirstOrDefault(t => t != "env" && !t.Contains('=')) ?? exec[0];
+			if (Path.GetFileName(program) == name || program == executable)
+				return !app.Terminal;
+		}
+		return false;
+	}
+
+	/// <summary>Programs on $PATH whose name starts with <paramref name="prefix"/> (for address bar suggestions).</summary>
+	public static IReadOnlyList<string> ExecutablesStartingWith(string prefix, int max)
+	{
+		if (string.IsNullOrEmpty(prefix) || max <= 0)
+			return [];
+		var found = new SortedSet<string>(StringComparer.Ordinal);
+		var path = Environment.GetEnvironmentVariable("PATH") ?? "/usr/bin:/bin";
+		foreach (var dir in path.Split(':', StringSplitOptions.RemoveEmptyEntries))
+		{
+			try
 			{
-				StartIn(folder, term);
-				return;
+				foreach (var file in Directory.EnumerateFiles(dir, prefix + "*"))
+					found.Add(Path.GetFileName(file));
+			}
+			catch (Exception)
+			{
+				// Missing or unreadable PATH entry.
 			}
 		}
-		throw new InvalidOperationException("No terminal emulator was found. Set one in Settings.");
+		return found.OrderBy(f => f.Length).Take(max).ToList();
 	}
 
 	public static string? FindInPath(string exe)
@@ -87,6 +185,9 @@ public static class LauncherService
 	public static string? GetMimeType(string path) => RunAndRead("xdg-mime", "query", "filetype", path);
 
 	private static List<DesktopApp>? _apps;
+
+	/// <summary>Forgets the installed-apps list (re-read on next use).</summary>
+	internal static void ClearAppCache() => _apps = null;
 
 	public static IReadOnlyList<DesktopApp> GetInstalledApps()
 	{

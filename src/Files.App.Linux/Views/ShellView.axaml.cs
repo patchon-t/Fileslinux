@@ -51,6 +51,8 @@ public partial class ShellView : UserControl
 			list.AddHandler(DragDrop.DropEvent, OnDrop);
 			list.AddHandler(DragDrop.DragLeaveEvent, (_, _) => ClearDropFeedback());
 			list.AddHandler(PointerWheelChangedEvent, OnListPointerWheel, RoutingStrategies.Tunnel);
+			// Group headers: styled differently, never selected; a click collapses or expands the group.
+			list.ContainerPrepared += (_, e) => e.Container.Classes.Set("groupheader", e.Container.DataContext is GroupHeader);
 			list.AddHandler(PointerCaptureLostEvent, (_, _) => EndMarquee());
 		}
 
@@ -268,6 +270,14 @@ public partial class ShellView : UserControl
 		if (_syncingSelection || _tab is null || sender != ActiveList)
 			return;
 		var list = (ListBox)sender;
+		// Keyboard or Shift+click ranges can include group headers: drop them from the selection.
+		if (list.SelectedItems?.OfType<GroupHeader>().ToList() is { Count: > 0 } headers)
+		{
+			_syncingSelection = true;
+			foreach (var h in headers)
+				list.SelectedItems.Remove(h);
+			_syncingSelection = false;
+		}
 		_tab.SetSelection(list.SelectedItems?.OfType<FileItem>().ToList() ?? []);
 	}
 
@@ -339,6 +349,13 @@ public partial class ShellView : UserControl
 		if (point.Properties.IsXButton2Pressed)
 		{
 			_tab?.GoForwardCommand.Execute(null);
+			e.Handled = true;
+			return;
+		}
+
+		if (point.Properties.IsLeftButtonPressed && ContainerFromSource(e.Source) is { DataContext: GroupHeader header })
+		{
+			_tab?.ToggleGroup(header);
 			e.Handled = true;
 			return;
 		}
@@ -700,7 +717,9 @@ public partial class ShellView : UserControl
 		menu.ShowAt(anchor);
 	}
 
-	private void BuildSortMenu(ItemCollection items)
+	private void BuildSortMenu(ItemCollection items) => BuildSortMenu(items, includeGroupBy: true);
+
+	private void BuildSortMenu(ItemCollection items, bool includeGroupBy)
 	{
 		items.Clear();
 		if (_tab is null)
@@ -724,6 +743,28 @@ public partial class ShellView : UserControl
 			SettingsService.Save();
 			_tab.Main.OnSortChanged();
 		}));
+		if (!includeGroupBy)
+			return;
+		items.Add(Separator());
+		var group = Sub(Loc.Get("GroupBy", "Group by"), Symbol.GroupList);
+		BuildGroupMenu(group.Items);
+		items.Add(group);
+	}
+
+	/// <summary>Group by: this folder only (Downloads starts grouped by date modified, like Windows).</summary>
+	private void BuildGroupMenu(ItemCollection items)
+	{
+		items.Clear();
+		if (_tab is null)
+			return;
+		var tab = _tab;
+		void Add(string text, GroupColumn column) => items.Add(Radio(text, tab.GroupBy == column, () => tab.SetGroupCommand.Execute(column)));
+		Add(Loc.Get("None", "None"), GroupColumn.None);
+		Add(Loc.Get("Name", "Name"), GroupColumn.Name);
+		Add(Loc.Get("DateModifiedLowerCase", "Date modified"), GroupColumn.DateModified);
+		Add(Loc.Get("DateCreated", "Date created"), GroupColumn.DateCreated);
+		Add(Loc.Get("Type", "Type"), GroupColumn.Type);
+		Add(Loc.Get("Size", "Size"), GroupColumn.Size);
 	}
 
 	private void BuildLayoutMenu(ItemCollection items)
@@ -800,9 +841,12 @@ public partial class ShellView : UserControl
 		var layout = Sub(Loc.Get("Layout", "Layout"), Symbol.Grid);
 		BuildLayoutMenu(layout.Items);
 		var sort = Sub(Loc.Get("SortBy", "Sort by"), Symbol.ArrowSort);
-		BuildSortMenu(sort.Items);
+		BuildSortMenu(sort.Items, includeGroupBy: false);
+		var groupBy = Sub(Loc.Get("GroupBy", "Group by"), Symbol.GroupList);
+		BuildGroupMenu(groupBy.Items);
 		items.Add(layout);
 		items.Add(sort);
+		items.Add(groupBy);
 		items.Add(Item(Loc.Get("Refresh", "Refresh"), Symbol.ArrowClockwise, tab.RefreshCommand, gesture: "F5"));
 		items.Add(Separator());
 

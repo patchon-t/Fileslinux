@@ -9,13 +9,14 @@ public sealed class FolderViewSettings
 	public LayoutMode? Layout { get; set; }
 	public SortColumn? SortBy { get; set; }
 	public bool? SortDescending { get; set; }
+	public GroupColumn? GroupBy { get; set; }
 
 	[System.Text.Json.Serialization.JsonIgnore]
-	public bool IsEmpty => Layout is null && SortBy is null && SortDescending is null;
+	public bool IsEmpty => Layout is null && SortBy is null && SortDescending is null && GroupBy is null;
 }
 
 /// <summary>The view a folder is shown with.</summary>
-public readonly record struct FolderView(LayoutMode Layout, SortColumn SortBy, bool SortDescending, bool IsCustom);
+public readonly record struct FolderView(LayoutMode Layout, SortColumn SortBy, bool SortDescending, GroupColumn GroupBy, bool IsCustom);
 
 /// <summary>
 /// Remembers the view per folder, like Files on Windows: a folder opens with the default layout and sort
@@ -33,12 +34,18 @@ public static class FolderViewService
 	{
 		var s = SettingsService.Current;
 		var custom = s.FolderViews.TryGetValue(KeyFor(path), out var v) ? v : null;
+
+		// Like Windows, Downloads opens grouped by date modified, newest first, until you change it.
+		var isDownloads = path is not null && path == XdgPaths.GetUserDir("DOWNLOAD");
 		return new FolderView(
 			custom?.Layout ?? s.DefaultLayout,
-			custom?.SortBy ?? s.SortBy,
-			custom?.SortDescending ?? s.SortDescending,
+			custom?.SortBy ?? (isDownloads ? SortColumn.DateModified : s.SortBy),
+			custom?.SortDescending ?? (isDownloads || s.SortDescending),
+			custom?.GroupBy ?? (isDownloads ? GroupColumn.DateModified : GroupColumn.None),
 			custom is { IsEmpty: false });
 	}
+
+	public static void SetGroup(string? path, GroupColumn group) => Update(path, v => v.GroupBy = group);
 
 	public static void SetLayout(string? path, LayoutMode layout) => Update(path, v => v.Layout = layout);
 

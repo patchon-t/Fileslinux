@@ -16,3 +16,10 @@ public sealed class EqualsConverter : IValueConverter
 
 	public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>Small helper converters.</summary>
+public static class Converters
+{
+	/// <summary>A width minus 24 px (group headers span a Grid layout's full width, less its padding).</summary>
+	public static readonly IValueConverter WidthMinus24 = new FuncValueConverter<double, double>(w => Math.Max(0, w - 24));
+}

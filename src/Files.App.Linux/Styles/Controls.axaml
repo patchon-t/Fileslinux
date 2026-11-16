@@ -158,6 +158,15 @@
 		<Setter Property="BorderThickness" Value="1" />
 	</Style>
 
+	<!--  Group headers in the layouts ("Last week", "Earlier this year"...): no hover or selection fill  -->
+	<Style Selector="ListBox.subtle ListBoxItem.groupheader">
+		<Setter Property="Focusable" Value="False" />
+		<Setter Property="Cursor" Value="Hand" />
+	</Style>
+	<Style Selector="ListBox.subtle ListBoxItem.groupheader /template/ ContentPresenter#PART_ContentPresenter, ListBox.subtle ListBoxItem.groupheader:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.subtle ListBoxItem.groupheader:selected /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="Transparent" />
+	</Style>
+
 	<!--  File layout items  -->
 	<Style Selector="ListBox.files ListBoxItem">
 		<Setter Property="Margin" Value="4,0" />

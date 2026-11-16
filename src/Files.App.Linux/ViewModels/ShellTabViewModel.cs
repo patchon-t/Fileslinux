@@ -40,6 +40,9 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 
 	public ObservableCollection<FileItem> Items { get; } = [];
 
+	/// <summary>What the layouts show: <see cref="Items"/>, with group headers when grouping is on.</summary>
+	public ObservableCollection<object> DisplayItems { get; } = [];
+
 	public ObservableCollection<BreadcrumbItem> Breadcrumbs { get; } = [];
 
 	public HomeViewModel Home { get; } = new();
@@ -184,7 +187,10 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		var previous = CurrentPath;
 		CurrentPath = path;
 		if (previous != path)
+		{
 			OnPropertyChanged(nameof(Title));
+			_collapsedGroups.Clear();
+		}
 		ApplyFolderView();
 		UpdateHistoryState();
 		UpdateBreadcrumbs();
@@ -334,6 +340,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		if (IsHome)
 		{
 			Items.Clear();
+			DisplayItems.Clear();
 			_allItems = [];
 			Home.Load(_main.Sidebar);
 			IsEmpty = false;
@@ -393,6 +400,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		Items.Clear();
 		foreach (var i in items)
 			Items.Add(i);
+		RebuildDisplay();
 
 		IsEmpty = Items.Count == 0 && ErrorMessage is null;
 		UpdateStatus();
@@ -495,6 +503,7 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 		IsSearchResults = true;
 		ErrorMessage = null;
 		Items.Clear();
+		DisplayItems.Clear();
 		_allItems = [];
 		IsLoading = true;
 		IsEmpty = false;
@@ -531,6 +540,15 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 			{
 				Items.Add(i);
 				_allItems.Add(i);
+			}
+			if (GroupBy == GroupColumn.None)
+			{
+				foreach (var i in buffer)
+					DisplayItems.Add(i);
+			}
+			else
+			{
+				RebuildDisplay();
 			}
 			ThumbnailService.QueueThumbnails(buffer, (int)GridIconSize * 2, cts.Token);
 			buffer.Clear();
@@ -1009,6 +1027,49 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 	[ObservableProperty]
 	public partial bool SortDescending { get; private set; }
 
+	/// <summary>Group by (per folder; Downloads defaults to date modified, like Windows).</summary>
+	[ObservableProperty]
+	public partial GroupColumn GroupBy { get; private set; }
+
+	public bool IsGrouped => GroupBy != GroupColumn.None;
+
+	partial void OnGroupByChanged(GroupColumn value) => OnPropertyChanged(nameof(IsGrouped));
+
+	private readonly HashSet<string> _collapsedGroups = new(StringComparer.Ordinal);
+	private readonly Dictionary<string, GroupHeader> _groupHeaders = new(StringComparer.Ordinal);
+
+	/// <summary>Rebuilds <see cref="DisplayItems"/> from <see cref="Items"/> (group headers, collapsed groups).</summary>
+	public void RebuildDisplay()
+	{
+		var display = GroupingService.Build(Items, GroupBy, _collapsedGroups, DateTime.Now, _groupHeaders);
+		_groupHeaders.Clear();
+		foreach (var header in display.OfType<GroupHeader>())
+			_groupHeaders[header.Key] = header;
+		DisplayItems.Clear();
+		foreach (var entry in display)
+			DisplayItems.Add(entry);
+	}
+
+	/// <summary>Collapses or expands a group (click on its header). The selection is kept for items still shown.</summary>
+	public void ToggleGroup(GroupHeader header)
+	{
+		if (!_collapsedGroups.Remove(header.Key))
+			_collapsedGroups.Add(header.Key);
+		var selected = SelectedItems;
+		RebuildDisplay();
+		var visible = DisplayItems.OfType<FileItem>().ToHashSet();
+		var keep = selected.Where(visible.Contains).ToList();
+		Dispatcher.UIThread.Post(() => SelectionRequested?.Invoke(this, keep), DispatcherPriority.Background);
+	}
+
+	/// <summary>Changes how this folder is grouped (this folder only).</summary>
+	[RelayCommand]
+	private void SetGroup(GroupColumn group)
+	{
+		FolderViewService.SetGroup(CurrentPath, group);
+		_main.OnFolderViewChanged(ViewKey);
+	}
+
 	/// <summary>True when this folder has its own layout or sort instead of the defaults.</summary>
 	[ObservableProperty]
 	public partial bool HasCustomView { get; private set; }
@@ -1020,8 +1081,16 @@ public sealed partial class ShellTabViewModel : ObservableObject, IDisposable
 	{
 		var view = FolderViewService.Get(CurrentPath);
 		var resort = view.SortBy != SortBy || view.SortDescending != SortDescending;
+		var regroup = view.GroupBy != GroupBy;
 		SortBy = view.SortBy;
 		SortDescending = view.SortDescending;
+		if (regroup)
+		{
+			GroupBy = view.GroupBy;
+			_collapsedGroups.Clear();
+			if (!resort && Items.Count > 0)
+				RebuildDisplay();
+		}
 		HasCustomView = view.IsCustom;
 		if (Layout != view.Layout)
 		{

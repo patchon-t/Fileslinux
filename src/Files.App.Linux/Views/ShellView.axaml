@@ -4,6 +4,7 @@
 	xmlns="https://github.com/avaloniaui"
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 	xmlns:c="using:Files.App.Linux.Controls"
+	xmlns:conv="using:Files.App.Linux.Converters"
 	xmlns:ic="using:FluentIcons.Avalonia"
 	xmlns:m="using:Files.App.Linux.Models"
 	xmlns:s="using:Files.App.Linux.Services"
@@ -226,10 +227,47 @@
 						Grid.Row="1"
 						Padding="0,2,0,8"
 						Classes="subtle files"
-						ItemsSource="{Binding Items}"
+						ItemsSource="{Binding DisplayItems}"
 						ScrollViewer.HorizontalScrollBarVisibility="Auto"
 						SelectionMode="Multiple">
-						<ListBox.ItemTemplate>
+						<ListBox.DataTemplates>
+							<DataTemplate x:DataType="s:GroupHeader">
+								<Grid
+									Height="36"
+									Margin="4,6,4,0"
+									
+									Background="Transparent"
+									ColumnDefinitions="Auto,Auto,Auto,*"
+									ToolTip.Tip="{v:Loc GroupHeaderTip, Click to collapse or expand}">
+									<ic:SymbolIcon
+										Margin="4,0,8,0"
+										Classes="sectionchevron"
+										Classes.collapsed="{Binding IsCollapsed}"
+										FontSize="12"
+										Foreground="{DynamicResource App.Theme.AccentBrush}"
+										Symbol="ChevronDown" />
+									<TextBlock
+										Grid.Column="1"
+										VerticalAlignment="Center"
+										FontSize="14"
+										Foreground="{DynamicResource App.Theme.AccentBrush}"
+										Text="{Binding Title}" />
+									<TextBlock
+										Grid.Column="2"
+										Margin="8,0,0,0"
+										VerticalAlignment="Center"
+										Classes="tertiary"
+										FontSize="12"
+										Text="{Binding CountText}" />
+									<Rectangle
+										Grid.Column="3"
+										Height="1"
+										Margin="12,0,8,0"
+										VerticalAlignment="Center"
+										Fill="{DynamicResource App.Theme.DividerBrush}" />
+								</Grid>
+							</DataTemplate>
+
 							<DataTemplate x:DataType="m:FileItem">
 								<c:DetailsRowPanel Height="32" Background="Transparent">
 									<StackPanel
@@ -276,7 +314,7 @@
 										TextTrimming="CharacterEllipsis" />
 								</c:DetailsRowPanel>
 							</DataTemplate>
-						</ListBox.ItemTemplate>
+					</ListBox.DataTemplates>
 					</ListBox>
 				</Grid>
 
@@ -285,7 +323,7 @@
 					x:Name="ListList"
 					Padding="4"
 					Classes="subtle files"
-					ItemsSource="{Binding Items}"
+					ItemsSource="{Binding DisplayItems}"
 					ScrollViewer.HorizontalScrollBarVisibility="Auto"
 					ScrollViewer.VerticalScrollBarVisibility="Disabled"
 					SelectionMode="Multiple">
@@ -300,7 +338,44 @@
 							<WrapPanel Orientation="Vertical" />
 						</ItemsPanelTemplate>
 					</ListBox.ItemsPanel>
-					<ListBox.ItemTemplate>
+					<ListBox.DataTemplates>
+							<DataTemplate x:DataType="s:GroupHeader">
+								<Grid
+									Height="36"
+									Margin="4,6,4,0"
+									Width="260"
+									Background="Transparent"
+									ColumnDefinitions="Auto,Auto,Auto,*"
+									ToolTip.Tip="{v:Loc GroupHeaderTip, Click to collapse or expand}">
+									<ic:SymbolIcon
+										Margin="4,0,8,0"
+										Classes="sectionchevron"
+										Classes.collapsed="{Binding IsCollapsed}"
+										FontSize="12"
+										Foreground="{DynamicResource App.Theme.AccentBrush}"
+										Symbol="ChevronDown" />
+									<TextBlock
+										Grid.Column="1"
+										VerticalAlignment="Center"
+										FontSize="14"
+										Foreground="{DynamicResource App.Theme.AccentBrush}"
+										Text="{Binding Title}" />
+									<TextBlock
+										Grid.Column="2"
+										Margin="8,0,0,0"
+										VerticalAlignment="Center"
+										Classes="tertiary"
+										FontSize="12"
+										Text="{Binding CountText}" />
+									<Rectangle
+										Grid.Column="3"
+										Height="1"
+										Margin="12,0,8,0"
+										VerticalAlignment="Center"
+										Fill="{DynamicResource App.Theme.DividerBrush}" />
+								</Grid>
+							</DataTemplate>
+
 						<DataTemplate x:DataType="m:FileItem">
 							<StackPanel
 								Width="260"
@@ -318,7 +393,7 @@
 									TextTrimming="CharacterEllipsis" />
 							</StackPanel>
 						</DataTemplate>
-					</ListBox.ItemTemplate>
+					</ListBox.DataTemplates>
 				</ListBox>
 
 				<!--  Grid layout  -->
@@ -326,7 +401,7 @@
 					x:Name="GridList"
 					Padding="8"
 					Classes="subtle grid"
-					ItemsSource="{Binding Items}"
+					ItemsSource="{Binding DisplayItems}"
 					ScrollViewer.HorizontalScrollBarVisibility="Disabled"
 					SelectionMode="Multiple">
 					<ListBox.IsVisible>
@@ -340,7 +415,44 @@
 							<WrapPanel Orientation="Horizontal" />
 						</ItemsPanelTemplate>
 					</ListBox.ItemsPanel>
-					<ListBox.ItemTemplate>
+					<ListBox.DataTemplates>
+							<DataTemplate x:DataType="s:GroupHeader">
+								<Grid
+									Height="36"
+									Margin="4,6,4,0"
+									Width="{Binding $parent[ListBox].Bounds.Width, Converter={x:Static conv:Converters.WidthMinus24}}"
+									Background="Transparent"
+									ColumnDefinitions="Auto,Auto,Auto,*"
+									ToolTip.Tip="{v:Loc GroupHeaderTip, Click to collapse or expand}">
+									<ic:SymbolIcon
+										Margin="4,0,8,0"
+										Classes="sectionchevron"
+										Classes.collapsed="{Binding IsCollapsed}"
+										FontSize="12"
+										Foreground="{DynamicResource App.Theme.AccentBrush}"
+										Symbol="ChevronDown" />
+									<TextBlock
+										Grid.Column="1"
+										VerticalAlignment="Center"
+										FontSize="14"
+										Foreground="{DynamicResource App.Theme.AccentBrush}"
+										Text="{Binding Title}" />
+									<TextBlock
+										Grid.Column="2"
+										Margin="8,0,0,0"
+										VerticalAlignment="Center"
+										Classes="tertiary"
+										FontSize="12"
+										Text="{Binding CountText}" />
+									<Rectangle
+										Grid.Column="3"
+										Height="1"
+										Margin="12,0,8,0"
+										VerticalAlignment="Center"
+										Fill="{DynamicResource App.Theme.DividerBrush}" />
+								</Grid>
+							</DataTemplate>
+
 						<DataTemplate x:DataType="m:FileItem">
 							<Grid
 								Width="{Binding $parent[v:ShellView].((vm:ShellTabViewModel)DataContext).GridItemWidth, FallbackValue=128}"
@@ -364,7 +476,7 @@
 									TextWrapping="Wrap" />
 							</Grid>
 						</DataTemplate>
-					</ListBox.ItemTemplate>
+					</ListBox.DataTemplates>
 				</ListBox>
 
 				<!--  Empty folder / errors  -->
